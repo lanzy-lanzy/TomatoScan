@@ -31,6 +31,7 @@ import coil.ImageLoader
 import coil.request.ImageRequest
 import com.ml.tomatoscan.models.ScanResult
 import com.ml.tomatoscan.utils.DatabaseImageFetcher
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -70,7 +71,7 @@ fun HistoryScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
@@ -93,7 +94,7 @@ fun HistoryScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { navController.navigate("analysis_tab") },
+                onClick = { navController.navigate("analysis") },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -122,8 +123,7 @@ fun HistoryScreen(
                     HistoryContent(
                         scanHistory = scanHistory,
                         onItemClick = { selectedScanResult = it },
-                        onDeleteClick = { showDeleteDialog = it },
-                        viewModel = viewModel
+                        onDeleteClick = { showDeleteDialog = it }
                     )
                 }
             }
@@ -246,8 +246,7 @@ fun EmptyHistoryState(onStartScan: () -> Unit) {
 fun HistoryContent(
     scanHistory: List<ScanResult>,
     onItemClick: (ScanResult) -> Unit,
-    onDeleteClick: (ScanResult) -> Unit,
-    viewModel: TomatoScanViewModel
+    onDeleteClick: (ScanResult) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

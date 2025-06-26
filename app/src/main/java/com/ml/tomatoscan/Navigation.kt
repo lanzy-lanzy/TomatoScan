@@ -14,7 +14,7 @@ import com.ml.tomatoscan.ui.auth.RegisterScreen
 import com.ml.tomatoscan.ui.screens.AnalysisScreen
 import com.ml.tomatoscan.ui.screens.AnalyticsScreen
 import com.ml.tomatoscan.ui.screens.MainScreen
-import com.ml.tomatoscan.ui.screens.RecentScansScreen
+import com.ml.tomatoscan.ui.screens.HistoryScreen
 import com.ml.tomatoscan.ui.screens.SettingsScreen
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
 
@@ -44,17 +44,15 @@ fun Navigation() {
             enterTransition = { fadeIn(animationSpec = tween(300)) },
             popExitTransition = { fadeOut(animationSpec = tween(300)) },
         ) {
-            MainScreen(mainNavController = navController)
+            MainScreen()
         }
         composable("analysis") {
-            AnalysisScreen(navController = navController, viewModel = viewModel)
+            AnalysisScreen(viewModel = viewModel)
         }
-        composable("recent_scans") {
-            RecentScansScreen()
+        composable("history") {
+            HistoryScreen(navController = navController, viewModel = viewModel)
         }
-        composable("analytics") {
-            AnalyticsScreen()
-        }
+
         composable("settings") {
             SettingsScreen(navController = navController)
         }

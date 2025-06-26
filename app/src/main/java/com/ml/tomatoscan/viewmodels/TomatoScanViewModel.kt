@@ -1,11 +1,11 @@
 package com.ml.tomatoscan.viewmodels
 
+import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-
 import com.ml.tomatoscan.data.FirebaseData
 import com.ml.tomatoscan.data.GeminiApi
 import com.ml.tomatoscan.data.HistoryRepository
@@ -15,17 +15,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 
-class TomatoScanViewModel : ViewModel() {
+class TomatoScanViewModel(application: Application) : AndroidViewModel(application) {
 
     private val geminiApi = GeminiApi()
     private val firebaseData = FirebaseData()
-    private var historyRepository: HistoryRepository? = null
-    
-    fun initializeWithContext(context: Context) {
-        if (historyRepository == null) {
-            historyRepository = HistoryRepository(context)
-        }
-    }
+    private val historyRepository: HistoryRepository = HistoryRepository(application)
 
     private val _scanResult = MutableStateFlow<ScanResult?>(null)
     val scanResult: StateFlow<ScanResult?> = _scanResult
@@ -75,7 +69,7 @@ class TomatoScanViewModel : ViewModel() {
                 
                 // Save to local Room database with image
                 try {
-                    historyRepository?.saveToHistory(result, imageUri, bitmap)
+                    historyRepository.saveToHistory(result, imageUri, bitmap)
                     android.util.Log.d("TomatoScanViewModel", "Saved to Room database successfully")
                 } catch (e: Exception) {
                     android.util.Log.e("TomatoScanViewModel", "Failed to save to Room database", e)
@@ -158,7 +152,7 @@ class TomatoScanViewModel : ViewModel() {
         )
     }
 
-    fun clearScanResult() {
+    fun clearAnalysisState() {
         _scanResult.value = null
     }
 
@@ -166,7 +160,7 @@ class TomatoScanViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val history = historyRepository?.getHistory() ?: emptyList()
+                val history = historyRepository.getHistory()
                 _scanHistory.value = history
                 android.util.Log.d("TomatoScanViewModel", "Loaded ${history.size} items from history")
             } catch (e: Exception) {
@@ -181,7 +175,7 @@ class TomatoScanViewModel : ViewModel() {
     fun deleteFromHistory(scanResult: ScanResult) {
         viewModelScope.launch {
             try {
-                historyRepository?.deleteFromHistory(scanResult)
+                historyRepository.deleteFromHistory(scanResult)
                 loadScanHistory() // Refresh the list
                 android.util.Log.d("TomatoScanViewModel", "Deleted item from history")
             } catch (e: Exception) {
@@ -193,7 +187,7 @@ class TomatoScanViewModel : ViewModel() {
     fun clearHistory() {
         viewModelScope.launch {
             try {
-                historyRepository?.clearHistory()
+                historyRepository.clearHistory()
                 _scanHistory.value = emptyList()
                 android.util.Log.d("TomatoScanViewModel", "Cleared all history")
             } catch (e: Exception) {
