@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+import android.net.Uri
+
 class UserViewModel(application: Application) : ViewModel() {
 
     private val sharedPreferences = application.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -16,12 +18,31 @@ class UserViewModel(application: Application) : ViewModel() {
     private val _userName = MutableStateFlow("Alex") // Default name
     val userName: StateFlow<String> = _userName
 
+    private val _userProfilePictureUri = MutableStateFlow<String?>(null)
+    val userProfilePictureUri: StateFlow<String?> = _userProfilePictureUri
+
     init {
         loadUserName()
+        loadUserProfilePictureUri()
     }
 
     private fun loadUserName() {
         _userName.value = sharedPreferences.getString("user_name", "Alex") ?: "Alex"
+    }
+
+    private fun loadUserProfilePictureUri() {
+        _userProfilePictureUri.value = sharedPreferences.getString("user_profile_picture_uri", null)
+    }
+
+    fun updateUserProfilePictureUri(uri: Uri?) {
+        viewModelScope.launch {
+            val uriString = uri?.toString()
+            _userProfilePictureUri.value = uriString
+            with(sharedPreferences.edit()) {
+                putString("user_profile_picture_uri", uriString)
+                apply()
+            }
+        }
     }
 
     fun updateUserName(newName: String) {

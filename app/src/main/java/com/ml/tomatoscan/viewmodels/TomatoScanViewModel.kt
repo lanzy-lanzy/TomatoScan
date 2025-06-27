@@ -58,10 +58,17 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
     private val _analysisImageUri = MutableStateFlow<Uri?>(null)
     val analysisImageUri: StateFlow<Uri?> = _analysisImageUri
 
+    private val _directCameraMode = MutableStateFlow(false)
+    val directCameraMode: StateFlow<Boolean> = _directCameraMode
+
 
 
     fun setAnalysisImageUri(uri: Uri?) {
         _analysisImageUri.value = uri
+    }
+
+    fun setDirectCameraMode(enabled: Boolean) {
+        _directCameraMode.value = enabled
     }
 
     fun analyzeImage(bitmap: Bitmap, imageUri: Uri) {
@@ -189,6 +196,7 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
     fun clearAnalysisState() {
         _scanResult.value = null
         _analysisImageUri.value = null
+        _directCameraMode.value = false
     }
 
     fun refresh() {

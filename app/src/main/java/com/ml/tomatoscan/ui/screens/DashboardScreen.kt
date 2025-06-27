@@ -1,6 +1,9 @@
 package com.ml.tomatoscan.ui.screens
 
 import android.graphics.Typeface
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
@@ -16,13 +19,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Nightlight
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
+import coil.compose.AsyncImage
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,19 +50,19 @@ import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.PercentFormatter
 import android.app.Application
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.ui.platform.LocalContext
 import com.ml.tomatoscan.R
 import com.ml.tomatoscan.models.ScanResult
 import com.ml.tomatoscan.ui.navigation.BottomNavItem
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
 import com.ml.tomatoscan.viewmodels.UserViewModel
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+
 import com.ml.tomatoscan.viewmodels.UserViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun DashboardScreen(
     navController: NavController,
@@ -67,21 +71,30 @@ fun DashboardScreen(
 ) {
     val scanHistory by viewModel.scanHistory.collectAsState()
     val userName by userViewModel.userName.collectAsState()
+    val userProfilePictureUri by userViewModel.userProfilePictureUri.collectAsState()
     val isHistoryLoading by viewModel.isHistoryLoading.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val pullRefreshState = rememberPullRefreshState(refreshing = isRefreshing, onRefresh = { viewModel.refresh() })
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        userViewModel.updateUserProfilePictureUri(uri)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        SwipeRefresh(
-            state = rememberSwipeRefreshState(isRefreshing),
-            onRefresh = { viewModel.refresh() }
-        ) {
+        Box(modifier = Modifier.pullRefresh(pullRefreshState)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                     .verticalScroll(rememberScrollState())
             ) {
-            DashboardHeader(userName = userName)
+            DashboardHeader(
+                userName = userName,
+                profilePictureUri = userProfilePictureUri,
+                onProfileClick = { imagePickerLauncher.launch("image/*") }
+            )
             Spacer(modifier = Modifier.height(24.dp))
             // Crossfade to smoothly transition between loading and content
             Crossfade(targetState = isHistoryLoading && scanHistory.isEmpty()) { isLoading ->
@@ -103,42 +116,47 @@ fun DashboardScreen(
                 }
             }
         }
+        PullRefreshIndicator(
+            refreshing = isRefreshing,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 
-        FloatingActionButton(
-            onClick = { navController.navigate(BottomNavItem.Analysis.route) },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "New Scan",
-                tint = MaterialTheme.colorScheme.onPrimary
-            )
-        }
+//        FloatingActionButton(
+//            onClick = { navController.navigate(BottomNavItem.Analysis.route) },
+//            shape = RoundedCornerShape(16.dp),
+//            containerColor = MaterialTheme.colorScheme.primary,
+//            modifier = Modifier
+//                .align(Alignment.BottomEnd)
+//                .padding(16.dp)
+//        ) {
+//            Icon(
+//                imageVector = Icons.Default.Add,
+//                contentDescription = "New Scan",
+//                tint = MaterialTheme.colorScheme.onPrimary
+//            )
+//        }
     }
 }
 
 @Composable
-fun DashboardHeader(userName: String) {
+fun DashboardHeader(userName: String, profilePictureUri: String?, onProfileClick: () -> Unit) {
     var isVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         isVisible = true
     }
     val currentDate = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date())
-    val greeting = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-        in 0..11 -> "Good Morning!"
-        in 12..17 -> "Good Afternoon!"
-        else -> "Good Evening!"
+    val (greeting, icon) = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
+        in 0..11 -> "Good Morning!" to Icons.Default.WbSunny
+        in 12..17 -> "Good Afternoon!" to Icons.Default.WbSunny
+        else -> "Good Evening!" to Icons.Default.Nightlight
     }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(180.dp) // Reduced height
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
@@ -164,33 +182,44 @@ fun DashboardHeader(userName: String) {
                     enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 200)) +
                             slideInVertically(initialOffsetY = { -40 }, animationSpec = tween(durationMillis = 500, delayMillis = 200))
                 ) {
-                Column {
-                    Text(
-                        text = greeting,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Text(
-                        text = userName, // Replace with dynamic user name
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
-                    )
-                }
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = greeting,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Text(
+                            text = userName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                        )
+                    }
                 }
                 AnimatedVisibility(
                     visible = isVisible,
                     enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 400)) +
                             slideInHorizontally(initialOffsetX = { 200 }, animationSpec = tween(durationMillis = 500, delayMillis = 400))
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with user avatar
+                    AsyncImage(
+                        model = profilePictureUri ?: R.drawable.ic_launcher_foreground,
                         contentDescription = "User Avatar",
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(60.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                            .clickable { onProfileClick() }
                     )
                 }
             }

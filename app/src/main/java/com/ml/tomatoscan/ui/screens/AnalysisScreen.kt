@@ -92,6 +92,7 @@ fun AnalysisScreen(
     val scanResult by viewModel.scanResult.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val imageUri by viewModel.analysisImageUri.collectAsState()
+    val directCameraMode by viewModel.directCameraMode.collectAsState()
     var showCameraPreview by rememberSaveable { mutableStateOf(false) }
     var imageFromCamera by rememberSaveable { mutableStateOf(false) }
 
@@ -126,6 +127,22 @@ fun AnalysisScreen(
             showCameraPreview = true
         } else {
             Log.e("AnalysisScreen", "Camera permission denied.")
+        }
+    }
+
+    // Auto-trigger camera when in direct camera mode
+    LaunchedEffect(directCameraMode) {
+        if (directCameraMode) {
+            when (PackageManager.PERMISSION_GRANTED) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) -> {
+                    showCameraPreview = true
+                    viewModel.setDirectCameraMode(false) // Reset the flag
+                }
+                else -> {
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    viewModel.setDirectCameraMode(false) // Reset the flag
+                }
+            }
         }
     }
 

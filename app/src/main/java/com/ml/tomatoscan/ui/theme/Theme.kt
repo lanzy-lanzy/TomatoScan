@@ -30,7 +30,7 @@ private val LightColorScheme = lightColorScheme(
     primary = TomatoRed,
     secondary = DarkGreen,
     background = OffWhite,
-    surface = White,
+    surface = OffWhite,
     onPrimary = White,
     onSecondary = White,
     onBackground = DarkGray,
@@ -58,7 +58,7 @@ fun TomatoScanTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            window.navigationBarColor = colorScheme.surface.toArgb()
+            window.navigationBarColor = colorScheme.primary.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }

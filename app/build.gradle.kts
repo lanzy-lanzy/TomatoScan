@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material)
     implementation("androidx.compose.material:material-icons-extended")
 
     // Navigation
@@ -91,9 +92,6 @@ dependencies {
 
     // MPAndroidChart
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
-
-    // Accompanist SwipeRefresh
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.34.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
