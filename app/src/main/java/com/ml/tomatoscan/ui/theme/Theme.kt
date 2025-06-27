@@ -17,6 +17,7 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = TomatoRed,
+    primaryContainer = TomatoRedDark,
     secondary = LightGreen,
     background = DarkGray,
     surface = DarkGray,
@@ -28,6 +29,7 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = TomatoRed,
+    primaryContainer = TomatoRedDark,
     secondary = DarkGreen,
     background = OffWhite,
     surface = OffWhite,
@@ -57,8 +59,9 @@ fun TomatoScanTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
+            WindowCompat.setDecorFitsSystemWindows(window, false)
             window.statusBarColor = colorScheme.primary.toArgb()
-            window.navigationBarColor = colorScheme.primary.toArgb()
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }
