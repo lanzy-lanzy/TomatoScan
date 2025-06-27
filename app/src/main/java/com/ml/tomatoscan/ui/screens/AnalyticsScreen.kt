@@ -28,7 +28,7 @@ import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.ml.tomatoscan.models.ScanResult
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,13 +36,9 @@ fun AnalyticsScreen(
     viewModel: TomatoScanViewModel = viewModel()
 ) {
     val scanHistory by viewModel.scanHistory.collectAsState()
-    val isRefreshing by viewModel.isLoading.collectAsState()
+        val isHistoryLoading by viewModel.isHistoryLoading.collectAsState()
 
-    LaunchedEffect(Unit) {
-        if (scanHistory.isEmpty()) {
-            viewModel.loadScanHistory()
-        }
-    }
+
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -53,30 +49,31 @@ fun AnalyticsScreen(
             )
         )
 
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = { viewModel.loadScanHistory() },
-            modifier = Modifier.fillMaxSize()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
-            ) {
-                if (scanHistory.isEmpty() && !isRefreshing) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No analytics data available. Pull to refresh.")
-                    }
-                } else {
-                    AnalyticsSummary(scanHistory = scanHistory)
-                    Spacer(modifier = Modifier.height(24.dp))
-                    AnalyticsChart(scanHistory = scanHistory)
+            if (isHistoryLoading && scanHistory.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
+            } else if (scanHistory.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No analytics data available.")
+                }
+            } else {
+                AnalyticsSummary(scanHistory = scanHistory)
+                Spacer(modifier = Modifier.height(24.dp))
+                AnalyticsChart(scanHistory = scanHistory)
             }
         }
     }

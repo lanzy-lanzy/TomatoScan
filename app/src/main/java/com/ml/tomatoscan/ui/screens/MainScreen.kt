@@ -25,25 +25,30 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.app.Application
 import androidx.compose.runtime.LaunchedEffect
 import com.ml.tomatoscan.ui.screens.AnalyticsScreen
 import com.ml.tomatoscan.ui.navigation.BottomNavItem
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
+import com.ml.tomatoscan.viewmodels.UserViewModel
+import com.ml.tomatoscan.viewmodels.UserViewModelFactory
 
 @Composable
 fun MainScreen() {
     val bottomNavController = rememberNavController()
+    val viewModel: TomatoScanViewModel = viewModel()
+    val userViewModel: UserViewModel = viewModel(factory = UserViewModelFactory(LocalContext.current.applicationContext as Application))
     Scaffold(
-        bottomBar = { BottomNavigation(navController = bottomNavController) }
+        bottomBar = { BottomBar(navController = bottomNavController, viewModel = viewModel) }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-            BottomNavGraph(bottomNavController = bottomNavController)
+            BottomNavGraph(bottomNavController = bottomNavController, viewModel = viewModel, userViewModel = userViewModel)
         }
     }
 }
 
 @Composable
-fun BottomNavigation(navController: NavHostController) {
+fun BottomBar(navController: NavController, viewModel: TomatoScanViewModel) {
     val items = listOf(
         BottomNavItem.Dashboard,
         BottomNavItem.Analysis,
@@ -61,12 +66,14 @@ fun BottomNavigation(navController: NavHostController) {
                 label = { Text(text = item.title) },
                 selected = currentRoute == item.route,
                 onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                    if (currentRoute != item.route) {
+                        if (currentRoute == BottomNavItem.Analysis.route) {
+                            viewModel.clearAnalysisState()
                         }
-                        launchSingleTop = true
-                        restoreState = true
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.findStartDestination().id)
+                            launchSingleTop = true
+                        }
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
@@ -82,12 +89,10 @@ fun BottomNavigation(navController: NavHostController) {
 }
 
 @Composable
-fun BottomNavGraph(bottomNavController: NavHostController) {
-    val viewModel: TomatoScanViewModel = viewModel()
-    
+fun BottomNavGraph(bottomNavController: NavHostController, viewModel: TomatoScanViewModel, userViewModel: UserViewModel) {
     NavHost(navController = bottomNavController, startDestination = BottomNavItem.Dashboard.route) {
         composable(BottomNavItem.Dashboard.route) {
-            DashboardScreen(navController = bottomNavController)
+            DashboardScreen(navController = bottomNavController, viewModel = viewModel, userViewModel = userViewModel)
         }
         composable(BottomNavItem.Analysis.route) {
             AnalysisScreen(viewModel = viewModel)
@@ -96,7 +101,7 @@ fun BottomNavGraph(bottomNavController: NavHostController) {
             HistoryScreen(navController = bottomNavController, viewModel = viewModel)
         }
         composable(BottomNavItem.Settings.route) {
-            SettingsScreen(navController = bottomNavController)
+            SettingsScreen(navController = bottomNavController, userViewModel = userViewModel)
         }
         composable(BottomNavItem.Analytics.route) {
             AnalyticsScreen(viewModel = viewModel)

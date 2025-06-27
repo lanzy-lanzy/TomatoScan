@@ -7,11 +7,18 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ml.tomatoscan.data.FirebaseData
+import coil.ImageLoader
 import com.ml.tomatoscan.data.GeminiApi
 import com.ml.tomatoscan.data.HistoryRepository
 import com.ml.tomatoscan.models.ScanResult
+import com.ml.tomatoscan.utils.DatabaseImageFetcher
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -21,14 +28,41 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
     private val firebaseData = FirebaseData()
     private val historyRepository: HistoryRepository = HistoryRepository(application)
 
+    val imageLoader: ImageLoader = ImageLoader.Builder(application)
+        .components {
+            add(DatabaseImageFetcher.Factory(application))
+        }
+        .build()
+
     private val _scanResult = MutableStateFlow<ScanResult?>(null)
     val scanResult: StateFlow<ScanResult?> = _scanResult
 
-    private val _scanHistory = MutableStateFlow<List<ScanResult>>(emptyList())
-    val scanHistory: StateFlow<List<ScanResult>> = _scanHistory
+    private val _isHistoryLoading = MutableStateFlow(false)
+    val isHistoryLoading: StateFlow<Boolean> = _isHistoryLoading
+
+    val scanHistory: StateFlow<List<ScanResult>> = historyRepository.getHistory()
+        .onStart { _isHistoryLoading.value = true }
+        .onEach { _isHistoryLoading.value = false }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
+    private val _analysisImageUri = MutableStateFlow<Uri?>(null)
+    val analysisImageUri: StateFlow<Uri?> = _analysisImageUri
+
+
+
+    fun setAnalysisImageUri(uri: Uri?) {
+        _analysisImageUri.value = uri
+    }
 
     fun analyzeImage(bitmap: Bitmap, imageUri: Uri) {
         viewModelScope.launch {
@@ -55,7 +89,7 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
                     imageUrl = imageUrl,
                     quality = quality,
                     confidence = analysisResult.confidence,
-                    timestamp = Date(),
+                    timestamp = Date().time,
                     diseaseDetected = analysisResult.diseaseDetected,
                     severity = analysisResult.severity,
                     description = analysisResult.description,
@@ -84,7 +118,7 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
                     imageUrl = imageUri.toString(),
                     quality = "Error",
                     confidence = 0f,
-                    timestamp = Date(),
+                    timestamp = Date().time,
                     diseaseDetected = "Analysis Error",
                     severity = "Unknown",
                     description = "Unable to analyze the image: ${e.message}",
@@ -148,35 +182,30 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
             imageUrl = imageUri.toString(),
             quality = qualities[randomIndex],
             confidence = confidences[randomIndex],
-            timestamp = Date()
+            timestamp = Date().time
         )
     }
 
     fun clearAnalysisState() {
         _scanResult.value = null
+        _analysisImageUri.value = null
     }
 
-    fun loadScanHistory() {
+    fun refresh() {
         viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val history = historyRepository.getHistory()
-                _scanHistory.value = history
-                android.util.Log.d("TomatoScanViewModel", "Loaded ${history.size} items from history")
-            } catch (e: Exception) {
-                android.util.Log.e("TomatoScanViewModel", "Failed to load history", e)
-                _scanHistory.value = emptyList()
-            } finally {
-                _isLoading.value = false
-            }
+            _isRefreshing.value = true
+            // Data is already live from Room, so we just show the indicator for a bit for good UX.
+            delay(1500)
+            _isRefreshing.value = false
         }
     }
+
+
 
     fun deleteFromHistory(scanResult: ScanResult) {
         viewModelScope.launch {
             try {
                 historyRepository.deleteFromHistory(scanResult)
-                loadScanHistory() // Refresh the list
                 android.util.Log.d("TomatoScanViewModel", "Deleted item from history")
             } catch (e: Exception) {
                 android.util.Log.e("TomatoScanViewModel", "Failed to delete from history", e)
@@ -188,7 +217,6 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             try {
                 historyRepository.clearHistory()
-                _scanHistory.value = emptyList()
                 android.util.Log.d("TomatoScanViewModel", "Cleared all history")
             } catch (e: Exception) {
                 android.util.Log.e("TomatoScanViewModel", "Failed to clear history", e)

@@ -50,10 +50,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,17 +78,22 @@ import com.ml.tomatoscan.ui.screens.analysis.CameraPreview
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
 import java.util.Locale
 
+private val UriSaver = Saver<Uri?, String>(
+    save = { it?.toString() ?: "" },
+    restore = { if (it.isNotEmpty()) Uri.parse(it) else null }
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalysisScreen(
-    viewModel: TomatoScanViewModel = viewModel()
+    viewModel: TomatoScanViewModel
 ) {
     val context = LocalContext.current
     val scanResult by viewModel.scanResult.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    var showCameraPreview by remember { mutableStateOf(false) }
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var imageFromCamera by remember { mutableStateOf(false) }
+    val imageUri by viewModel.analysisImageUri.collectAsState()
+    var showCameraPreview by rememberSaveable { mutableStateOf(false) }
+    var imageFromCamera by rememberSaveable { mutableStateOf(false) }
 
     val textToSpeech = remember(context) {
         var tts: TextToSpeech? = null
@@ -101,7 +109,6 @@ fun AnalysisScreen(
         onDispose {
             textToSpeech?.stop()
             textToSpeech?.shutdown()
-            viewModel.clearAnalysisState()
         }
     }
 
@@ -126,7 +133,7 @@ fun AnalysisScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            imageUri = it
+            viewModel.setAnalysisImageUri(it)
             imageFromCamera = false
         }
     }
@@ -140,7 +147,7 @@ fun AnalysisScreen(
                         IconButton(onClick = {
                             when {
                                 showCameraPreview -> showCameraPreview = false
-                                imageUri != null -> imageUri = null
+                                imageUri != null -> viewModel.setAnalysisImageUri(null)
                                 else -> viewModel.clearAnalysisState()
                             }
                         }) {
@@ -166,43 +173,46 @@ fun AnalysisScreen(
                 CameraPreview(
                     onImageCaptured = { uri ->
                         showCameraPreview = false
-                        imageUri = uri
+                        viewModel.setAnalysisImageUri(uri)
                         imageFromCamera = true
                     },
                     onError = { Log.e("AnalysisScreen", "Image capture error: $it") },
                     onClose = { showCameraPreview = false }
                 )
             } else {
+                val currentUri = imageUri
                 when {
                     isLoading -> {
-                        AnalysisInProgressScreen(uri = imageUri!!)
+                        currentUri?.let { AnalysisInProgressScreen(uri = it) }
                     }
                     scanResult != null -> {
-                        AnalysisContent(
-                            viewModel = viewModel,
-                            imageUri = imageUri!!,
-                            onAnalyzeAnother = {
-                                viewModel.clearAnalysisState()
-                                imageUri = null
-                            }
-                        )
+                        currentUri?.let {
+                            AnalysisContent(
+                                viewModel = viewModel,
+                                imageUri = it,
+                                onAnalyzeAnother = {
+                                    viewModel.clearAnalysisState()
+                                }
+                            )
+                        }
+
                     }
-                    imageUri != null -> {
+                    currentUri != null -> {
                         ImagePreview(
-                            uri = imageUri!!,
+                            uri = currentUri,
                             fromCamera = imageFromCamera,
                             onAnalyze = {
                                 val bitmap = if (Build.VERSION.SDK_INT < 28) {
                                     @Suppress("DEPRECATION")
-                                    MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri!!)
+                                    MediaStore.Images.Media.getBitmap(context.contentResolver, currentUri)
                                 } else {
-                                    val source = ImageDecoder.createSource(context.contentResolver, imageUri!!)
+                                    val source = ImageDecoder.createSource(context.contentResolver, currentUri)
                                     ImageDecoder.decodeBitmap(source)
                                 }
-                                viewModel.analyzeImage(bitmap, imageUri!!)
+                                viewModel.analyzeImage(bitmap, currentUri)
                             },
                             onRetake = {
-                                imageUri = null
+                                viewModel.setAnalysisImageUri(null)
                                 if (imageFromCamera) {
                                     showCameraPreview = true
                                 } else {

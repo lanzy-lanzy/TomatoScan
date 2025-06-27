@@ -1,7 +1,12 @@
 package com.ml.tomatoscan.ui.screens
 
 import android.graphics.Typeface
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,10 +45,16 @@ import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.PercentFormatter
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
 import com.ml.tomatoscan.R
 import com.ml.tomatoscan.models.ScanResult
 import com.ml.tomatoscan.ui.navigation.BottomNavItem
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
+import com.ml.tomatoscan.viewmodels.UserViewModel
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.ml.tomatoscan.viewmodels.UserViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -51,26 +62,29 @@ import java.util.*
 @Composable
 fun DashboardScreen(
     navController: NavController,
-    viewModel: TomatoScanViewModel = viewModel()
+    viewModel: TomatoScanViewModel,
+    userViewModel: UserViewModel
 ) {
     val scanHistory by viewModel.scanHistory.collectAsState()
-
-    // Load history when the screen is first composed
-    LaunchedEffect(Unit) {
-        viewModel.loadScanHistory()
-    }
+    val userName by userViewModel.userName.collectAsState()
+    val isHistoryLoading by viewModel.isHistoryLoading.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                .verticalScroll(rememberScrollState())
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(isRefreshing),
+            onRefresh = { viewModel.refresh() }
         ) {
-            DashboardHeader()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    .verticalScroll(rememberScrollState())
+            ) {
+            DashboardHeader(userName = userName)
             Spacer(modifier = Modifier.height(24.dp))
             // Crossfade to smoothly transition between loading and content
-            Crossfade(targetState = scanHistory.isEmpty() && viewModel.isLoading.value) { isLoading ->
+            Crossfade(targetState = isHistoryLoading && scanHistory.isEmpty()) { isLoading ->
                 if (isLoading) {
                     Box(modifier = Modifier.fillMaxSize().padding(top=100.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
@@ -79,7 +93,7 @@ fun DashboardScreen(
                     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                         QuickActionsSection(navController = navController)
                         Spacer(modifier = Modifier.height(24.dp))
-                        RecentScansSection(navController = navController, scanHistory = scanHistory)
+                        RecentScansSection(navController = navController, scanHistory = scanHistory, imageLoader = viewModel.imageLoader)
                         Spacer(modifier = Modifier.height(24.dp))
                         StatsSection(scanHistory = scanHistory)
                         Spacer(modifier = Modifier.height(24.dp))
@@ -89,6 +103,7 @@ fun DashboardScreen(
                 }
             }
         }
+    }
 
         FloatingActionButton(
             onClick = { navController.navigate(BottomNavItem.Analysis.route) },
@@ -108,7 +123,11 @@ fun DashboardScreen(
 }
 
 @Composable
-fun DashboardHeader() {
+fun DashboardHeader(userName: String) {
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
     val currentDate = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date())
     val greeting = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
         in 0..11 -> "Good Morning!"
@@ -140,6 +159,11 @@ fun DashboardHeader() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 200)) +
+                            slideInVertically(initialOffsetY = { -40 }, animationSpec = tween(durationMillis = 500, delayMillis = 200))
+                ) {
                 Column {
                     Text(
                         text = greeting,
@@ -148,26 +172,38 @@ fun DashboardHeader() {
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Text(
-                        text = "Alex", // Replace with dynamic user name
+                        text = userName, // Replace with dynamic user name
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Normal,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                     )
                 }
-                Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with user avatar
-                    contentDescription = "User Avatar",
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                }
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 400)) +
+                            slideInHorizontally(initialOffsetX = { 200 }, animationSpec = tween(durationMillis = 500, delayMillis = 400))
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with user avatar
+                        contentDescription = "User Avatar",
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                    )
+                }
+            }
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 600))
+            ) {
+                Text(
+                    text = currentDate,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                 )
             }
-            Text(
-                text = currentDate,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-            )
         }
     }
 }

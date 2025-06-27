@@ -5,19 +5,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.ImageLoader
 import com.ml.tomatoscan.models.ScanResult
 import com.ml.tomatoscan.ui.navigation.BottomNavItem
+import com.ml.tomatoscan.utils.DatabaseImageFetcher
 
 @Composable
 fun RecentScansSection(
     navController: NavController,
-    scanHistory: List<ScanResult>
+    scanHistory: List<ScanResult>,
+    imageLoader: ImageLoader
 ) {
+
     if (scanHistory.isNotEmpty()) {
         Column {
             Row(
@@ -40,8 +45,9 @@ fun RecentScansSection(
                 scanHistory.take(3).forEach { scanResult ->
                     HistoryItem(
                         scanResult = scanResult,
-                        onClick = { /* Handle item click if needed */ },
-                        onDeleteClick = { /* Handle delete click if needed */ }
+                        onClick = { navController.navigate(BottomNavItem.History.route) },
+                        onDeleteClick = { /* Deletion not supported from dashboard */ },
+                        imageLoader = imageLoader
                     )
                 }
             }

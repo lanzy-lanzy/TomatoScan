@@ -8,9 +8,14 @@ import com.ml.tomatoscan.data.database.TomatoScanDatabase
 import com.ml.tomatoscan.data.database.entities.AnalysisEntity
 import com.ml.tomatoscan.models.ScanResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
+
+
 
 class HistoryRepository(private val context: Context) {
 
@@ -46,7 +51,7 @@ class HistoryRepository(private val context: Context) {
                 recommendations = scanResult.recommendations,
                 treatmentOptions = scanResult.treatmentOptions,
                 preventionMeasures = scanResult.preventionMeasures,
-                timestamp = scanResult.timestamp,
+                timestamp = Date(scanResult.timestamp),
                 quality = scanResult.quality
             )
             
@@ -61,23 +66,20 @@ class HistoryRepository(private val context: Context) {
         }
     }
 
-    suspend fun getHistory(): List<ScanResult> = withContext(Dispatchers.IO) {
-        try {
-            val analyses = analysisDao.getRecentAnalyses(100) // Get last 100 analyses
-            val scanResults = analyses.map { entity ->
-                // Convert back to ScanResult with image URI
+            fun getHistory(): Flow<List<ScanResult>> {
+        return analysisDao.getRecentAnalyses(100).map { analyses ->
+            analyses.map { entity ->
                 val imageUri = if (entity.imageData.isNotEmpty()) {
-                    // Create URI from byte array (you could save as temp file or use data URI)
                     createImageUriFromByteArray(entity.imageData)
                 } else {
                     entity.imagePath ?: ""
                 }
-                
+
                 ScanResult(
                     imageUrl = imageUri,
                     quality = entity.quality,
                     confidence = entity.confidence,
-                    timestamp = entity.timestamp,
+                    timestamp = entity.timestamp.time,
                     diseaseDetected = entity.diseaseDetected,
                     severity = entity.severity,
                     description = entity.description,
@@ -86,24 +88,12 @@ class HistoryRepository(private val context: Context) {
                     preventionMeasures = entity.preventionMeasures
                 )
             }
-            
-            Log.d("HistoryRepository", "Retrieved ${scanResults.size} items from database")
-            scanResults
-            
-        } catch (e: Exception) {
-            Log.e("HistoryRepository", "Failed to retrieve history", e)
-            emptyList()
         }
     }
 
     suspend fun deleteFromHistory(scanResult: ScanResult) = withContext(Dispatchers.IO) {
         try {
-            // Find the entity by timestamp (assuming it's unique enough)
-            val analyses = analysisDao.getRecentAnalyses(100)
-            val entityToDelete = analyses.find { 
-                it.timestamp.time == scanResult.timestamp.time 
-            }
-            
+            val entityToDelete = analysisDao.findAnalysisByTimestamp(Date(scanResult.timestamp))
             entityToDelete?.let { entity ->
                 // Delete image file if exists
                 entity.imagePath?.let { path ->
@@ -123,7 +113,7 @@ class HistoryRepository(private val context: Context) {
     suspend fun clearHistory() = withContext(Dispatchers.IO) {
         try {
             // Get all analyses to clean up image files
-            val analyses = analysisDao.getRecentAnalyses(1000)
+            val analyses = analysisDao.getRecentAnalyses(1000).first()
             
             // Delete all image files
             analyses.forEach { entity ->

@@ -16,16 +16,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import android.app.Application
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.ml.tomatoscan.viewmodels.UserViewModel
+import com.ml.tomatoscan.viewmodels.UserViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen(
+    navController: NavController,
+    userViewModel: UserViewModel
+) {
     var showAboutDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showNameDialog by remember { mutableStateOf(false) }
+    val userName by userViewModel.userName.collectAsState()
 
     val backgroundGradient = Brush.verticalGradient(
         colors = listOf(
@@ -64,6 +74,19 @@ fun SettingsScreen(navController: NavController) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
+                // Account Section
+                SettingsSection(
+                    title = "Account",
+                    items = listOf(
+                        SettingsItem(
+                            icon = Icons.Default.Person,
+                            title = "Change Name",
+                            subtitle = "Current name: $userName",
+                            onClick = { showNameDialog = true }
+                        )
+                    )
+                )
+
                 // App Section
                 SettingsSection(
                     title = "Application",
@@ -138,6 +161,17 @@ fun SettingsScreen(navController: NavController) {
 
     if (showThemeDialog) {
         ThemeDialog(onDismiss = { showThemeDialog = false })
+    }
+
+    if (showNameDialog) {
+        NameChangeDialog(
+            currentName = userName,
+            onDismiss = { showNameDialog = false },
+            onConfirm = { newName ->
+                userViewModel.updateUserName(newName)
+                showNameDialog = false
+            }
+        )
     }
 }
 
@@ -286,6 +320,39 @@ fun ThemeOption(title: String, isSelected: Boolean, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(12.dp))
         Text(title, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+@Composable
+fun NameChangeDialog(currentName: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var newName by remember { mutableStateOf(currentName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Person, contentDescription = "Change Name") },
+        title = { Text("Change Your Name", fontWeight = FontWeight.Bold) },
+        text = {
+            OutlinedTextField(
+                value = newName,
+                onValueChange = { newName = it },
+                label = { Text("Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(newName) },
+                enabled = newName.isNotBlank() && newName != currentName
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 data class SettingsItem(

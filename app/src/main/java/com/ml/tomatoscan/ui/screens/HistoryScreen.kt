@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,17 +41,16 @@ import java.util.*
 @Composable
 fun HistoryScreen(
     navController: NavController,
-    viewModel: TomatoScanViewModel = viewModel()
+    viewModel: TomatoScanViewModel
 ) {
     val scanHistory by viewModel.scanHistory.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    var selectedScanResult by remember { mutableStateOf<ScanResult?>(null) }
-    var showDeleteDialog by remember { mutableStateOf<ScanResult?>(null) }
-    var showClearAllDialog by remember { mutableStateOf(false) }
+    val isHistoryLoading by viewModel.isHistoryLoading.collectAsState()
+    var selectedScanResult by rememberSaveable { mutableStateOf<ScanResult?>(null) }
+    var showDeleteDialog by rememberSaveable { mutableStateOf<ScanResult?>(null) }
+    var showClearAllDialog by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadScanHistory()
-    }
+
+
 
     val backgroundGradient = Brush.verticalGradient(
         colors = listOf(
@@ -67,14 +67,6 @@ fun HistoryScreen(
                         "Analysis History",
                         fontWeight = FontWeight.Bold
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
                 },
                 actions = {
                     if (scanHistory.isNotEmpty()) {
@@ -114,19 +106,20 @@ fun HistoryScreen(
                 .padding(innerPadding)
         ) {
             when {
-                isLoading -> {
+                isHistoryLoading && scanHistory.isEmpty() -> {
                     LoadingHistoryIndicator()
                 }
                 scanHistory.isEmpty() -> {
                     EmptyHistoryState(
-                        onStartScan = { navController.navigate("analysis_tab") }
+                        onStartScan = { navController.navigate("analysis") }
                     )
                 }
                 else -> {
                     HistoryContent(
                         scanHistory = scanHistory,
                         onItemClick = { selectedScanResult = it },
-                        onDeleteClick = { showDeleteDialog = it }
+                        onDeleteClick = { showDeleteDialog = it },
+                        imageLoader = viewModel.imageLoader
                     )
                 }
             }
@@ -249,7 +242,8 @@ fun EmptyHistoryState(onStartScan: () -> Unit) {
 fun HistoryContent(
     scanHistory: List<ScanResult>,
     onItemClick: (ScanResult) -> Unit,
-    onDeleteClick: (ScanResult) -> Unit
+    onDeleteClick: (ScanResult) -> Unit,
+    imageLoader: ImageLoader
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -268,12 +262,13 @@ fun HistoryContent(
         
         items(
             items = scanHistory,
-            key = { it.timestamp.time }
+            key = { it.timestamp }
         ) { scanResult ->
             HistoryItem(
                 scanResult = scanResult,
                 onClick = { onItemClick(scanResult) },
-                onDeleteClick = { onDeleteClick(scanResult) }
+                onDeleteClick = { onDeleteClick(scanResult) },
+                imageLoader = imageLoader
             )
         }
     }
@@ -283,21 +278,13 @@ fun HistoryContent(
 fun HistoryItem(
     scanResult: ScanResult,
     onClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    imageLoader: ImageLoader
 ) {
     val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy • HH:mm", Locale.getDefault()) }
     val diseaseColor = getHistoryDiseaseColor(scanResult.severity)
-    
-    // Create custom ImageLoader with DatabaseImageFetcher
-    val customImageLoader = remember {
-        ImageLoader.Builder(context)
-            .components {
-                add(DatabaseImageFetcher.Factory(context))
-            }
-            .build()
-    }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -313,9 +300,10 @@ fun HistoryItem(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(scanResult.imageUrl)
+                    .memoryCacheKey(scanResult.timestamp.toString())
                     .crossfade(true)
                     .build(),
-                imageLoader = customImageLoader,
+                imageLoader = imageLoader,
                 contentDescription = "Scanned tomato leaf",
                 modifier = Modifier
                     .size(80.dp)
@@ -363,7 +351,7 @@ fun HistoryItem(
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Text(
-                    text = dateFormat.format(scanResult.timestamp),
+                    text = dateFormat.format(Date(scanResult.timestamp)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

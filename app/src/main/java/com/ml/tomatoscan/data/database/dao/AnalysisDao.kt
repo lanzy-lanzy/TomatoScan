@@ -11,10 +11,13 @@ interface AnalysisDao {
     fun getAllAnalyses(): Flow<List<AnalysisEntity>>
     
     @Query("SELECT * FROM analysis_results ORDER BY timestamp DESC LIMIT :limit")
-    suspend fun getRecentAnalyses(limit: Int = 50): List<AnalysisEntity>
+    fun getRecentAnalyses(limit: Int = 50): Flow<List<AnalysisEntity>>
     
     @Query("SELECT * FROM analysis_results WHERE id = :id")
     suspend fun getAnalysisById(id: Long): AnalysisEntity?
+
+    @Query("SELECT * FROM analysis_results WHERE timestamp = :timestamp LIMIT 1")
+    suspend fun findAnalysisByTimestamp(timestamp: java.util.Date): AnalysisEntity?
     
     @Query("SELECT * FROM analysis_results WHERE diseaseDetected LIKE :disease ORDER BY timestamp DESC")
     suspend fun getAnalysesByDisease(disease: String): List<AnalysisEntity>
