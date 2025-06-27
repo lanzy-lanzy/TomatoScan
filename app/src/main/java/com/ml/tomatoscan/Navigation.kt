@@ -9,13 +9,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.ml.tomatoscan.ui.auth.LoginScreen
-import com.ml.tomatoscan.ui.auth.RegisterScreen
 import com.ml.tomatoscan.ui.screens.AnalysisScreen
 import com.ml.tomatoscan.ui.screens.AnalyticsScreen
 import com.ml.tomatoscan.ui.screens.MainScreen
 import com.ml.tomatoscan.ui.screens.HistoryScreen
 import com.ml.tomatoscan.ui.screens.SettingsScreen
+import com.ml.tomatoscan.ui.screens.SplashScreen
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -24,20 +23,9 @@ fun Navigation() {
     val navController = rememberNavController()
     val viewModel: TomatoScanViewModel = viewModel()
 
-    NavHost(navController = navController, startDestination = "login") {
-        composable(
-            "login",
-            exitTransition = { fadeOut(animationSpec = tween(300)) },
-            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-        ) {
-            LoginScreen(navController = navController)
-        }
-        composable(
-            "register",
-            enterTransition = { fadeIn(animationSpec = tween(300)) },
-            popExitTransition = { fadeOut(animationSpec = tween(300)) },
-        ) {
-            RegisterScreen(navController = navController)
+    NavHost(navController = navController, startDestination = "splash") {
+        composable("splash") {
+            SplashScreen(navController = navController)
         }
         composable(
             "dashboard",

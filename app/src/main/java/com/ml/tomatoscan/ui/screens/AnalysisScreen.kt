@@ -29,11 +29,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -281,12 +288,26 @@ private fun ImagePreview(
                 .align(Alignment.BottomCenter)
                 .background(Color.Black.copy(alpha = 0.5f))
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = onRetake) {
+            FilledTonalButton(
+                onClick = onRetake,
+                shape = RoundedCornerShape(50),
+                modifier = Modifier.height(56.dp)
+            ) {
+                Icon(Icons.Default.Replay, contentDescription = "Retake")
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(if (fromCamera) "Retake" else "Choose Another")
             }
-            Button(onClick = onAnalyze) {
+            Button(
+                onClick = onAnalyze,
+                shape = RoundedCornerShape(50),
+                modifier = Modifier.height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Icon(Icons.Default.Science, contentDescription = "Analyze")
+                Spacer(modifier = Modifier.width(8.dp))
                 Text("Analyze")
             }
         }
@@ -308,14 +329,15 @@ private fun AnalysisInProgressScreen(uri: Uri) {
 
     val infiniteTransition = rememberInfiniteTransition(label = "scanner")
     val scanPosition by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
+        initialValue = -0.1f, // Start off-screen
+        targetValue = 1.1f, // End off-screen
         animationSpec = infiniteRepeatable(
             animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
+            repeatMode = RepeatMode.Restart
         ),
         label = "scan_position"
     )
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -330,19 +352,26 @@ private fun AnalysisInProgressScreen(uri: Uri) {
             val canvasWidth = size.width
             val lineY = canvasHeight * scanPosition
 
+            // Dark overlay
             drawRect(color = Color.Black.copy(alpha = 0.6f))
 
-            drawLine(
-                color = Color.Cyan,
-                start = Offset(0f, lineY),
-                end = Offset(canvasWidth, lineY),
-                strokeWidth = 6f
+            // Glowing scanner line
+            val scannerBrush = Brush.verticalGradient(
+                colors = listOf(
+                    primaryColor.copy(alpha = 0f),
+                    primaryColor.copy(alpha = 0.8f),
+                    primaryColor,
+                    primaryColor.copy(alpha = 0.8f),
+                    primaryColor.copy(alpha = 0f)
+                ),
+                startY = lineY - 20.dp.toPx(),
+                endY = lineY + 20.dp.toPx()
             )
             drawLine(
-                color = Color.Cyan.copy(alpha = 0.5f),
+                brush = scannerBrush,
                 start = Offset(0f, lineY),
                 end = Offset(canvasWidth, lineY),
-                strokeWidth = 12f,
+                strokeWidth = 40.dp.toPx(),
                 cap = StrokeCap.Round
             )
         }

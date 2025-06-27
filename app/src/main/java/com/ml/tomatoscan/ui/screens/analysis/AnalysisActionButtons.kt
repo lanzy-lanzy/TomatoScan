@@ -35,14 +35,14 @@ fun ActionButtons(onCaptureClick: () -> Unit, onUploadClick: () -> Unit) {
             onClick = onCaptureClick,
             icon = Icons.Default.CameraAlt,
             label = "Capture Image",
-            color = MaterialTheme.colorScheme.secondary,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )
         ActionButton(
             onClick = onUploadClick,
             icon = Icons.Default.Image,
             label = "Upload from Gallery",
-            color = MaterialTheme.colorScheme.tertiary,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
             modifier = Modifier.weight(1f)
         )
     }
