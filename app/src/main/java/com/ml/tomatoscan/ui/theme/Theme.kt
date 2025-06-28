@@ -28,7 +28,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = TomatoRed,
+    primary = TomatoRedDark,
     primaryContainer = TomatoRedDark,
     secondary = DarkGreen,
     background = OffWhite,
@@ -61,7 +61,8 @@ fun TomatoScanTheme(
             val window = (view.context as Activity).window
             WindowCompat.setDecorFitsSystemWindows(window, false)
             window.statusBarColor = colorScheme.primary.toArgb()
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            // Use primary color to match status bar for consistent visual framing
+            window.navigationBarColor = colorScheme.primary.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }

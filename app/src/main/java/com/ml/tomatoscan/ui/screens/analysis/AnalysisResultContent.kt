@@ -103,27 +103,99 @@ fun ScanResultDetails(scanResult: ScanResult?) {
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // --- Enhanced Disease Header ---
         Text(
             text = scanResult?.diseaseDetected?.takeIf { it.isNotBlank() } ?: "Healthy",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color(0xFFD32F2F), // Tomato Red
             textAlign = TextAlign.Center
         )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // --- Accurate Confidence Calculation ---
+        val rawConfidence = scanResult?.confidence ?: 0f
+        val displayConfidence = when {
+            rawConfidence > 1.0f -> rawConfidence.coerceAtMost(100f).toInt() // Already percent, cap at 100
+            else -> (rawConfidence * 100).toInt().coerceAtMost(100)
+        }
+
+        // --- Confidence Color Coding ---
+        val (confidenceColor, confidenceLabel, confidenceIcon) = when {
+            displayConfidence >= 80 -> Triple(Color(0xFF388E3C), "High Reliability", "\uD83C\uDF45") // Tomato
+            displayConfidence >= 50 -> Triple(Color(0xFFFFA000), "Medium Reliability", "\uD83D\uDD36") // Orange
+            else -> Triple(Color(0xFFD32F2F), "Low Reliability", "\u26A0\uFE0F") // Red, Warning
+        }
+
+        // --- Confidence Chip ---
+        Card(
+            colors = CardDefaults.cardColors(containerColor = confidenceColor.copy(alpha = 0.12f)),
+            shape = RoundedCornerShape(32.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            modifier = Modifier.padding(vertical = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(confidenceIcon, fontSize = MaterialTheme.typography.titleLarge.fontSize)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Confidence: $displayConfidence%",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = confidenceColor,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = confidenceLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = confidenceColor,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        // --- Confidence Warning for Low Reliability ---
+        if (displayConfidence < 50) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFCDD2)), // Light tomato red
+                shape = RoundedCornerShape(18.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("\u26A0\uFE0F", fontSize = MaterialTheme.typography.titleLarge.fontSize, color = Color(0xFFD32F2F))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Low confidence: Please retake or upload a clearer image for reliable results.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFD32F2F),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Confidence: ${(scanResult?.confidence?.times(100))?.toInt() ?: 0}%",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.secondary,
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        // --- Description ---
         Text(
             text = scanResult?.description ?: "",
             style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 6.dp)
         )
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(22.dp))
+        // --- Tomato Gradient Divider ---
+        androidx.compose.material3.Divider(
+            color = Color(0xFFD32F2F).copy(alpha = 0.35f),
+            thickness = 2.dp,
+            modifier = Modifier.padding(vertical = 6.dp, horizontal = 32.dp)
+        )
         if (!scanResult?.recommendations.isNullOrEmpty()) {
             ResultSectionCard(
                 icon = "\uD83D\uDCA1", // Lightbulb
