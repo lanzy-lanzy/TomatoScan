@@ -1,3 +1,56 @@
 <resources>
     <string name="app_name">TomatoScan</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="account_section">Account</string>
+    <string name="application_section">Application</string>
+    <string name="data_privacy_section">Data &amp; Privacy</string>
+    <string name="about_section">About</string>
+
+    <!-- Account Settings -->
+    <string name="change_name">Change Name</string>
+    <string name="current_name">Current name: %1$s</string>
+
+    <!-- Application Settings -->
+    <string name="theme">Theme</string>
+    <string name="theme_subtitle">Customize app appearance</string>
+    <string name="notifications">Notifications</string>
+    <string name="notifications_subtitle">Manage notification preferences</string>
+    <string name="language">Language</string>
+    <string name="language_subtitle">Choose your preferred language</string>
+
+    <!-- Data & Privacy Settings -->
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="privacy_policy_subtitle">View our privacy policy</string>
+    <string name="clear_data">Clear Data</string>
+    <string name="clear_data_subtitle">Remove all local data</string>
+
+    <!-- About Settings -->
+    <string name="about_tomatoscan">About TomatoScan</string>
+    <string name="version">Version 1.0.0</string>
+    <string name="rate_app">Rate App</string>
+    <string name="rate_app_subtitle">Rate us on Play Store</string>
+
+    <!-- Theme Dialog -->
+    <string name="choose_theme">Choose Theme</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
+    <!-- Language Dialog -->
+    <string name="choose_language">Choose Language</string>
+    <string name="language_english">English</string>
+    <string name="language_filipino">Filipino</string>
+    <string name="language_cebuano">Cebuano</string>
+
+    <!-- Common -->
+    <string name="close">Close</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="save">Save</string>
+
+    <!-- About Dialog -->
+    <string name="about_description">An AI-powered app to help you identify tomato leaf diseases and get treatment advice.</string>
+    <string name="powered_by">Powered by Google Gemini AI</string>
 </resources>

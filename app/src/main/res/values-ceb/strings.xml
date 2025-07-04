@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">TomatoScan</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">Mga Setting</string>
+    <string name="account_section">Account</string>
+    <string name="application_section">Application</string>
+    <string name="data_privacy_section">Data ug Privacy</string>
+    <string name="about_section">Mahitungod</string>
+    
+    <!-- Account Settings -->
+    <string name="change_name">Usba ang Ngalan</string>
+    <string name="current_name">Karon nga ngalan: %1$s</string>
+    
+    <!-- Application Settings -->
+    <string name="theme">Tema</string>
+    <string name="theme_subtitle">I-customize ang hitsura sa app</string>
+    <string name="notifications">Mga Notification</string>
+    <string name="notifications_subtitle">Pagdumala sa mga preference sa notification</string>
+    <string name="language">Pinulongan</string>
+    <string name="language_subtitle">Pilia ang inyong gusto nga pinulongan</string>
+    
+    <!-- Data & Privacy Settings -->
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="privacy_policy_subtitle">Tan-awa ang among privacy policy</string>
+    <string name="clear_data">I-clear ang Data</string>
+    <string name="clear_data_subtitle">Kuhaa ang tanan nga local data</string>
+    
+    <!-- About Settings -->
+    <string name="about_tomatoscan">Mahitungod sa TomatoScan</string>
+    <string name="version">Bersyon 1.0.0</string>
+    <string name="rate_app">I-rate ang App</string>
+    <string name="rate_app_subtitle">I-rate mi sa Play Store</string>
+    
+    <!-- Theme Dialog -->
+    <string name="choose_theme">Pilia ang Tema</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_light">Hayag</string>
+    <string name="theme_dark">Ngitngit</string>
+    
+    <!-- Language Dialog -->
+    <string name="choose_language">Pilia ang Pinulongan</string>
+    <string name="language_english">English</string>
+    <string name="language_filipino">Filipino</string>
+    <string name="language_cebuano">Cebuano</string>
+    
+    <!-- Common -->
+    <string name="close">Sirado</string>
+    <string name="cancel">Kanselahon</string>
+    <string name="ok">OK</string>
+    <string name="save">I-save</string>
+    
+    <!-- About Dialog -->
+    <string name="about_description">Usa ka AI-powered nga app aron matabangan mo nga ma-identify ang mga sakit sa dahon sa kamatis ug makakuha og treatment advice.</string>
+    <string name="powered_by">Powered by Google Gemini AI</string>
+</resources>

@@ -25,6 +25,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.ml.tomatoscan.viewmodels.UserViewModel
 import com.ml.tomatoscan.viewmodels.UserViewModelFactory
+import com.ml.tomatoscan.viewmodels.ThemeViewModel
+import com.ml.tomatoscan.viewmodels.ThemeViewModelFactory
+import com.ml.tomatoscan.viewmodels.ThemeMode
+import com.ml.tomatoscan.viewmodels.LanguageViewModel
+import com.ml.tomatoscan.viewmodels.LanguageViewModelFactory
+import com.ml.tomatoscan.utils.SupportedLanguage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,10 +38,22 @@ fun SettingsScreen(
     navController: NavController,
     userViewModel: UserViewModel
 ) {
+    val context = LocalContext.current
+    val themeViewModel: ThemeViewModel = viewModel(
+        factory = ThemeViewModelFactory(context.applicationContext as Application)
+    )
+    val languageViewModel: LanguageViewModel = viewModel(
+        factory = LanguageViewModelFactory(context.applicationContext as Application)
+    )
+
     var showAboutDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
+
     val userName by userViewModel.userName.collectAsState()
+    val currentTheme by themeViewModel.themeMode.collectAsState()
+    val currentLanguage by languageViewModel.currentLanguage.collectAsState()
 
     val backgroundGradient = Brush.verticalGradient(
         colors = listOf(
@@ -94,7 +112,7 @@ fun SettingsScreen(
                         SettingsItem(
                             icon = Icons.Default.Palette,
                             title = "Theme",
-                            subtitle = "Customize app appearance",
+                            subtitle = "Current: ${getThemeDisplayName(currentTheme)}",
                             onClick = { showThemeDialog = true }
                         ),
                         SettingsItem(
@@ -106,8 +124,8 @@ fun SettingsScreen(
                         SettingsItem(
                             icon = Icons.Default.Language,
                             title = "Language",
-                            subtitle = "Choose your preferred language",
-                            onClick = { /* TODO */ }
+                            subtitle = "Current: ${currentLanguage.nativeDisplayName}",
+                            onClick = { showLanguageDialog = true }
                         )
                     )
                 )
@@ -160,7 +178,25 @@ fun SettingsScreen(
     }
 
     if (showThemeDialog) {
-        ThemeDialog(onDismiss = { showThemeDialog = false })
+        ThemeDialog(
+            currentTheme = currentTheme,
+            onDismiss = { showThemeDialog = false },
+            onThemeSelected = { theme ->
+                themeViewModel.setThemeMode(theme)
+                showThemeDialog = false
+            }
+        )
+    }
+
+    if (showLanguageDialog) {
+        LanguageDialog(
+            currentLanguage = currentLanguage,
+            onDismiss = { showLanguageDialog = false },
+            onLanguageSelected = { language ->
+                languageViewModel.setLanguage(language)
+                showLanguageDialog = false
+            }
+        )
     }
 
     if (showNameDialog) {
@@ -286,18 +322,32 @@ fun AboutDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-fun ThemeDialog(onDismiss: () -> Unit) {
+fun ThemeDialog(
+    currentTheme: ThemeMode,
+    onDismiss: () -> Unit,
+    onThemeSelected: (ThemeMode) -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Palette, contentDescription = "Theme") },
         title = { Text("Choose Theme", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                // In a real app, you'd get this from a ViewModel/datastore
-                val currentSelection = "System Default"
-                ThemeOption("System Default", currentSelection == "System Default") { /* TODO */ }
-                ThemeOption("Light", currentSelection == "Light") { /* TODO */ }
-                ThemeOption("Dark", currentSelection == "Dark") { /* TODO */ }
+                ThemeOption(
+                    title = "System Default",
+                    isSelected = currentTheme == ThemeMode.SYSTEM,
+                    onClick = { onThemeSelected(ThemeMode.SYSTEM) }
+                )
+                ThemeOption(
+                    title = "Light",
+                    isSelected = currentTheme == ThemeMode.LIGHT,
+                    onClick = { onThemeSelected(ThemeMode.LIGHT) }
+                )
+                ThemeOption(
+                    title = "Dark",
+                    isSelected = currentTheme == ThemeMode.DARK,
+                    onClick = { onThemeSelected(ThemeMode.DARK) }
+                )
             }
         },
         confirmButton = {
@@ -353,6 +403,57 @@ fun NameChangeDialog(currentName: String, onDismiss: () -> Unit, onConfirm: (Str
             }
         }
     )
+}
+
+@Composable
+fun LanguageDialog(
+    currentLanguage: SupportedLanguage,
+    onDismiss: () -> Unit,
+    onLanguageSelected: (SupportedLanguage) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Language, contentDescription = "Language") },
+        title = { Text("Choose Language", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                SupportedLanguage.values().forEach { language ->
+                    LanguageOption(
+                        language = language,
+                        isSelected = currentLanguage == language,
+                        onClick = { onLanguageSelected(language) }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
+}
+
+@Composable
+fun LanguageOption(language: SupportedLanguage, isSelected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = isSelected, onClick = onClick)
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(language.nativeDisplayName, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+fun getThemeDisplayName(themeMode: ThemeMode): String {
+    return when (themeMode) {
+        ThemeMode.SYSTEM -> "System Default"
+        ThemeMode.LIGHT -> "Light"
+        ThemeMode.DARK -> "Dark"
+    }
 }
 
 data class SettingsItem(
