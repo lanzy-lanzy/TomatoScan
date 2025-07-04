@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "893241113767",
+    "project_id": "tomatoscan",
+    "storage_bucket": "tomatoscan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:893241113767:android:d8a6d03a11278140572f82",
+        "android_client_info": {
+          "package_name": "com.ml.tomatoscan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAg6HfOSv3IkpD68FDUJaSv8MeDqvO35SA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
