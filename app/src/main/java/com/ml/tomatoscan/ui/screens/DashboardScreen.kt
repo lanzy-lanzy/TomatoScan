@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -170,9 +171,9 @@ fun DashboardHeader(userName: String, profilePictureUri: String?, onProfileClick
     }
     val currentDate = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date())
     val (greeting, icon) = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-        in 0..11 -> "Good Morning!" to Icons.Default.WbSunny
-        in 12..17 -> "Good Afternoon!" to Icons.Default.WbSunny
-        else -> "Good Evening!" to Icons.Default.Nightlight
+        in 0..11 -> stringResource(R.string.good_morning) to Icons.Default.WbSunny
+        in 12..17 -> stringResource(R.string.good_afternoon) to Icons.Default.WbSunny
+        else -> stringResource(R.string.good_evening) to Icons.Default.Nightlight
     }
 
     Box(
@@ -323,7 +324,7 @@ fun StatsSection(scanHistory: List<ScanResult>) {
 
     Column {
         Text(
-            text = "Your Statistics",
+            text = stringResource(R.string.your_statistics),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -332,9 +333,9 @@ fun StatsSection(scanHistory: List<ScanResult>) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            StatCard(title = "Total Scans", value = totalScans.toString(), modifier = Modifier.weight(1f))
-            StatCard(title = "Avg. Quality", value = averageQuality, modifier = Modifier.weight(1f))
-            StatCard(title = "Last Scan", value = lastScanDate, modifier = Modifier.weight(1f))
+            StatCard(title = stringResource(R.string.total_scans), value = totalScans.toString(), modifier = Modifier.weight(1f))
+            StatCard(title = stringResource(R.string.avg_quality), value = averageQuality, modifier = Modifier.weight(1f))
+            StatCard(title = stringResource(R.string.last_scan), value = lastScanDate, modifier = Modifier.weight(1f))
         }
     }
 }
@@ -374,7 +375,6 @@ data class TomatoDisease(
     val description: String,
     val symptoms: String,
     val severity: DiseaseSeverity,
-    val icon: ImageVector,
     val imageUrl: String,
     val detailedSymptoms: List<String>,
     val causes: List<String>,
@@ -391,284 +391,12 @@ enum class DiseaseSeverity {
 @Composable
 fun DiseaseInformationSection() {
     var selectedDisease by remember { mutableStateOf<TomatoDisease?>(null) }
-
-    val diseases = remember {
-        listOf(
-            TomatoDisease(
-                name = "Early Blight",
-                description = "Fungal disease causing dark spots with concentric rings on leaves",
-                symptoms = "Brown spots with target-like rings, yellowing leaves",
-                severity = DiseaseSeverity.MEDIUM,
-                icon = Icons.Default.Warning,
-                imageUrl = "https://content.ces.ncsu.edu/media/images/IMG_1302.jpeg",
-                detailedSymptoms = listOf(
-                    "Dark brown spots with concentric rings (target-like appearance)",
-                    "Yellowing of leaves starting from bottom of plant",
-                    "Spots may have yellow halos around them",
-                    "Leaves eventually turn brown and drop off",
-                    "Stems and fruit can also be affected"
-                ),
-                causes = listOf(
-                    "Alternaria solani fungus",
-                    "High humidity and warm temperatures",
-                    "Poor air circulation",
-                    "Overhead watering",
-                    "Plant stress from drought or nutrient deficiency"
-                ),
-                prevention = listOf(
-                    "Ensure good air circulation around plants",
-                    "Water at soil level, avoid wetting leaves",
-                    "Apply mulch to prevent soil splash",
-                    "Rotate crops annually",
-                    "Remove infected plant debris"
-                ),
-                treatment = listOf(
-                    "Apply copper-based fungicides",
-                    "Use organic neem oil treatments",
-                    "Remove affected leaves immediately",
-                    "Improve air circulation",
-                    "Reduce watering frequency"
-                ),
-                progressionStages = listOf(
-                    "Small dark spots appear on lower leaves",
-                    "Spots develop concentric rings",
-                    "Yellowing spreads around spots",
-                    "Leaves turn brown and drop",
-                    "Disease moves up the plant"
-                ),
-                optimalConditions = "Maintain humidity below 85%, ensure good air circulation, and water at soil level to prevent this disease."
-            ),
-            TomatoDisease(
-                name = "Late Blight",
-                description = "Serious fungal disease that can destroy entire crops rapidly",
-                symptoms = "Water-soaked spots, white fuzzy growth, rapid leaf death",
-                severity = DiseaseSeverity.CRITICAL,
-                icon = Icons.Default.Dangerous,
-                imageUrl = "https://content.ces.ncsu.edu/media/images/IMG_0600.jpeg",
-                detailedSymptoms = listOf(
-                    "Water-soaked lesions on leaves and stems",
-                    "White fuzzy growth on undersides of leaves",
-                    "Rapid browning and death of affected tissue",
-                    "Dark brown to black lesions on fruit",
-                    "Entire plants can die within days"
-                ),
-                causes = listOf(
-                    "Phytophthora infestans pathogen",
-                    "Cool, wet weather conditions",
-                    "High humidity (above 90%)",
-                    "Temperature range of 60-70°F",
-                    "Poor air circulation"
-                ),
-                prevention = listOf(
-                    "Choose resistant varieties",
-                    "Ensure excellent drainage",
-                    "Provide good air circulation",
-                    "Avoid overhead watering",
-                    "Apply preventive fungicides in wet weather"
-                ),
-                treatment = listOf(
-                    "Remove infected plants immediately",
-                    "Apply copper-based fungicides",
-                    "Improve air circulation",
-                    "Reduce humidity around plants",
-                    "Consider destroying severely affected plants"
-                ),
-                progressionStages = listOf(
-                    "Water-soaked spots appear on leaves",
-                    "White fuzzy growth develops",
-                    "Lesions turn brown and expand rapidly",
-                    "Stems and fruit become infected",
-                    "Plant death can occur within 1-2 weeks"
-                ),
-                optimalConditions = "Keep humidity below 90%, ensure excellent drainage, and provide good air circulation to prevent this devastating disease."
-            ),
-            TomatoDisease(
-                name = "Bacterial Spot",
-                description = "Bacterial infection causing small dark spots on leaves and fruit",
-                symptoms = "Small dark spots with yellow halos, leaf drop",
-                severity = DiseaseSeverity.MEDIUM,
-                icon = Icons.Default.Circle,
-                imageUrl = "https://content.ces.ncsu.edu/media/images/K_Johnson_7082.JPG",
-                detailedSymptoms = listOf(
-                    "Small, dark brown to black spots on leaves",
-                    "Yellow halos around spots",
-                    "Spots may have raised or sunken centers",
-                    "Leaf yellowing and premature drop",
-                    "Fruit develops small, raised, dark spots"
-                ),
-                causes = listOf(
-                    "Xanthomonas bacteria species",
-                    "Warm, humid weather conditions",
-                    "Overhead watering and rain splash",
-                    "Wounds from insects or pruning",
-                    "Contaminated seeds or transplants"
-                ),
-                prevention = listOf(
-                    "Use certified disease-free seeds",
-                    "Avoid overhead watering",
-                    "Provide good air circulation",
-                    "Disinfect tools between plants",
-                    "Remove infected plant debris"
-                ),
-                treatment = listOf(
-                    "Apply copper-based bactericides",
-                    "Remove infected leaves and fruit",
-                    "Improve air circulation",
-                    "Avoid working with wet plants",
-                    "Use drip irrigation instead of sprinklers"
-                ),
-                progressionStages = listOf(
-                    "Small water-soaked spots appear",
-                    "Spots turn dark brown to black",
-                    "Yellow halos develop around spots",
-                    "Leaves yellow and drop prematurely",
-                    "Fruit develops characteristic scab-like spots"
-                ),
-                optimalConditions = "Maintain good air circulation, avoid overhead watering, and keep humidity levels moderate to prevent bacterial infections."
-            ),
-            TomatoDisease(
-                name = "Mosaic Virus",
-                description = "Viral disease causing mottled yellow and green patterns",
-                symptoms = "Mottled coloring, stunted growth, distorted leaves",
-                severity = DiseaseSeverity.HIGH,
-                icon = Icons.Default.Texture,
-                imageUrl = "https://content.ces.ncsu.edu/media/images/1_xsV4R5h.jpeg",
-                detailedSymptoms = listOf(
-                    "Mottled yellow and green patterns on leaves",
-                    "Stunted plant growth",
-                    "Distorted, curled, or puckered leaves",
-                    "Reduced fruit size and yield",
-                    "Mosaic patterns may appear on fruit"
-                ),
-                causes = listOf(
-                    "Tobacco Mosaic Virus (TMV) or related viruses",
-                    "Transmission through infected tools",
-                    "Handling by smokers or tobacco users",
-                    "Infected transplants or seeds",
-                    "Mechanical transmission during cultivation"
-                ),
-                prevention = listOf(
-                    "Use virus-free certified seeds and transplants",
-                    "Disinfect tools with 10% bleach solution",
-                    "Wash hands thoroughly before handling plants",
-                    "Avoid smoking near tomato plants",
-                    "Remove infected plants immediately"
-                ),
-                treatment = listOf(
-                    "No cure available - remove infected plants",
-                    "Disinfect all tools and equipment",
-                    "Control aphids and other vectors",
-                    "Plant resistant varieties",
-                    "Maintain good garden hygiene"
-                ),
-                progressionStages = listOf(
-                    "Light and dark green mottling appears",
-                    "Leaf distortion becomes more pronounced",
-                    "Plant growth slows significantly",
-                    "Fruit development is affected",
-                    "Overall plant vigor declines"
-                ),
-                optimalConditions = "Practice strict hygiene, use certified disease-free plants, and avoid tobacco products near tomatoes to prevent viral infections."
-            ),
-            TomatoDisease(
-                name = "Septoria Leaf Spot",
-                description = "Fungal disease with small circular spots and dark centers",
-                symptoms = "Small circular spots with dark centers, yellowing leaves",
-                severity = DiseaseSeverity.MEDIUM,
-                icon = Icons.Default.FiberManualRecord,
-                imageUrl = "https://content.ces.ncsu.edu/media/images/IMG_0675_NLNaTrA.jpeg",
-                detailedSymptoms = listOf(
-                    "Small, circular spots with dark centers",
-                    "Gray to brown spots with dark borders",
-                    "Tiny black specks (fruiting bodies) in spot centers",
-                    "Yellowing of leaves around spots",
-                    "Lower leaves affected first, progressing upward"
-                ),
-                causes = listOf(
-                    "Septoria lycopersici fungus",
-                    "Warm, humid weather conditions",
-                    "Overhead watering and rain splash",
-                    "Poor air circulation",
-                    "Infected plant debris in soil"
-                ),
-                prevention = listOf(
-                    "Ensure good air circulation",
-                    "Water at soil level",
-                    "Apply mulch to prevent soil splash",
-                    "Remove lower leaves touching ground",
-                    "Clean up plant debris in fall"
-                ),
-                treatment = listOf(
-                    "Apply fungicides containing chlorothalonil",
-                    "Remove affected leaves immediately",
-                    "Improve air circulation around plants",
-                    "Reduce watering frequency",
-                    "Apply organic copper sprays"
-                ),
-                progressionStages = listOf(
-                    "Small spots appear on lower leaves",
-                    "Spots develop dark centers with gray borders",
-                    "Black fruiting bodies form in centers",
-                    "Leaves yellow and drop from bottom up",
-                    "Disease progresses up the plant"
-                ),
-                optimalConditions = "Maintain good air circulation, avoid overhead watering, and remove lower leaves to prevent this common fungal disease."
-            ),
-            TomatoDisease(
-                name = "Fusarium Wilt",
-                description = "Soilborne fungal disease causing wilting and vascular discoloration",
-                symptoms = "One-sided wilting, yellowing leaves, brown vascular streaks",
-                severity = DiseaseSeverity.CRITICAL,
-                icon = Icons.Default.LocalFlorist,
-                imageUrl = "https://content.ces.ncsu.edu/media/images/2_MzYX798.jpeg",
-                detailedSymptoms = listOf(
-                    "One-sided wilting of leaves or branches",
-                    "Lower leaves turn yellow first",
-                    "Brown streaks in vascular tissue",
-                    "Stunted plant growth",
-                    "Few or no fruit development",
-                    "Permanent wilting regardless of watering"
-                ),
-                causes = listOf(
-                    "Fusarium oxysporum f. sp. lycopersici",
-                    "Soilborne fungal pathogen",
-                    "Warm soil temperatures",
-                    "Acidic soil pH (5.0-5.5)",
-                    "High humidity conditions",
-                    "Contaminated soil or tools"
-                ),
-                prevention = listOf(
-                    "Plant resistant varieties",
-                    "Use grafted tomatoes",
-                    "Rotate crops for 3-5 years",
-                    "Maintain neutral soil pH (6.5-7.0)",
-                    "Use sterile potting media",
-                    "Clean equipment between fields"
-                ),
-                treatment = listOf(
-                    "No cure once established",
-                    "Remove and destroy infected plants",
-                    "Soil fumigation (conventional)",
-                    "Use resistant rootstocks",
-                    "Improve soil drainage",
-                    "Apply preventive fungicides"
-                ),
-                progressionStages = listOf(
-                    "One-sided wilting appears",
-                    "Lower leaves turn yellow",
-                    "Vascular browning visible",
-                    "Wilting becomes permanent",
-                    "Progressive defoliation",
-                    "Plant death"
-                ),
-                optimalConditions = "Cool, well-drained soil with neutral pH and good air circulation"
-            )
-        )
-    }
+    val context = LocalContext.current
+    val diseases = remember { loadDiseasesFromAssets(context) }
 
     Column {
         Text(
-            text = "Common Tomato Diseases",
+            text = stringResource(R.string.common_tomato_diseases),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -696,6 +424,18 @@ fun DiseaseInformationSection() {
     }
 }
 
+private fun loadDiseasesFromAssets(context: android.content.Context): List<TomatoDisease> {
+    val jsonString: String
+    try {
+        jsonString = context.assets.open("diseases.json").bufferedReader().use { it.readText() }
+    } catch (ioException: java.io.IOException) {
+        ioException.printStackTrace()
+        return emptyList()
+    }
+    val listType = object : com.google.gson.reflect.TypeToken<List<TomatoDisease>>() {}.type
+    return com.google.gson.Gson().fromJson(jsonString, listType)
+}
+
 @Composable
 fun DiseaseCard(
     disease: TomatoDisease,
@@ -715,10 +455,10 @@ fun DiseaseCard(
     }
 
     val severityText = when (disease.severity) {
-        DiseaseSeverity.LOW -> "Low Risk"
-        DiseaseSeverity.MEDIUM -> "Medium Risk"
-        DiseaseSeverity.HIGH -> "High Risk"
-        DiseaseSeverity.CRITICAL -> "Critical"
+        DiseaseSeverity.LOW -> stringResource(R.string.low_risk)
+        DiseaseSeverity.MEDIUM -> stringResource(R.string.medium_risk)
+        DiseaseSeverity.HIGH -> stringResource(R.string.high_risk)
+        DiseaseSeverity.CRITICAL -> stringResource(R.string.critical)
     }
 
     Card(
@@ -756,18 +496,20 @@ fun DiseaseCard(
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(disease.imageUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "${disease.name} affected leaf",
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(android.R.drawable.ic_menu_gallery),
-                    error = painterResource(android.R.drawable.ic_menu_report_image)
+                val icon = when (disease.name) {
+                    "Early Blight" -> Icons.Default.Warning
+                    "Late Blight" -> Icons.Default.Dangerous
+                    "Bacterial Spot" -> Icons.Default.Circle
+                    "Mosaic Virus" -> Icons.Default.Texture
+                    "Septoria Leaf Spot" -> Icons.Default.FiberManualRecord
+                    "Fusarium Wilt" -> Icons.Default.LocalFlorist
+                    else -> Icons.Default.Help
+                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = disease.name,
+                    modifier = Modifier.size(32.dp),
+                    tint = severityColor
                 )
             }
 
@@ -816,7 +558,7 @@ fun DiseaseCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Symptoms: ${disease.symptoms}",
+                    text = "${stringResource(R.string.symptoms)}: ${disease.symptoms}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     maxLines = 1
@@ -855,7 +597,7 @@ fun ScanHistoryChart(scanHistory: List<ScanResult>) {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "Scan Results Distribution",
+                text = stringResource(R.string.scan_results_distribution),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -927,7 +669,7 @@ fun ScanHistoryChart(scanHistory: List<ScanResult>) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "No scan history available.",
+                            stringResource(R.string.no_scan_history_available),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -1015,10 +757,10 @@ fun DiseaseDetailDialog(
                 }
 
                 val severityText = when (disease.severity) {
-                    DiseaseSeverity.LOW -> "Low Risk"
-                    DiseaseSeverity.MEDIUM -> "Medium Risk"
-                    DiseaseSeverity.HIGH -> "High Risk"
-                    DiseaseSeverity.CRITICAL -> "Critical"
+                    DiseaseSeverity.LOW -> stringResource(R.string.low_risk)
+                    DiseaseSeverity.MEDIUM -> stringResource(R.string.medium_risk)
+                    DiseaseSeverity.HIGH -> stringResource(R.string.high_risk)
+                    DiseaseSeverity.CRITICAL -> stringResource(R.string.critical)
                 }
 
                 Surface(
@@ -1048,45 +790,40 @@ fun DiseaseDetailDialog(
 
                 // Detailed Symptoms
                 DiseaseDetailSection(
-                    title = "Detailed Symptoms",
-                    items = disease.detailedSymptoms,
-                    icon = Icons.Default.Visibility
+                    title = stringResource(R.string.detailed_symptoms),
+                    items = disease.detailedSymptoms
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Causes
                 DiseaseDetailSection(
-                    title = "Causes",
-                    items = disease.causes,
-                    icon = Icons.Default.Science
+                    title = stringResource(R.string.causes),
+                    items = disease.causes
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Prevention
                 DiseaseDetailSection(
-                    title = "Prevention Methods",
-                    items = disease.prevention,
-                    icon = Icons.Default.Shield
+                    title = stringResource(R.string.prevention_methods),
+                    items = disease.prevention
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Treatment
                 DiseaseDetailSection(
-                    title = "Treatment Options",
-                    items = disease.treatment,
-                    icon = Icons.Default.LocalHospital
+                    title = stringResource(R.string.treatment_options),
+                    items = disease.treatment
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Progression Stages
                 DiseaseDetailSection(
-                    title = "Disease Progression",
-                    items = disease.progressionStages,
-                    icon = Icons.Default.Timeline
+                    title = stringResource(R.string.disease_progression),
+                    items = disease.progressionStages
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -1113,7 +850,7 @@ fun DiseaseDetailDialog(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Optimal Growing Conditions",
+                                text = stringResource(R.string.optimal_growing_conditions),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -1137,9 +874,16 @@ fun DiseaseDetailDialog(
 @Composable
 fun DiseaseDetailSection(
     title: String,
-    items: List<String>,
-    icon: ImageVector
+    items: List<String>
 ) {
+    val icon = when (title) {
+        stringResource(R.string.detailed_symptoms) -> Icons.Default.Visibility
+        stringResource(R.string.causes) -> Icons.Default.Science
+        stringResource(R.string.prevention_methods) -> Icons.Default.Shield
+        stringResource(R.string.treatment_options) -> Icons.Default.LocalHospital
+        stringResource(R.string.disease_progression) -> Icons.Default.Timeline
+        else -> Icons.Default.Help
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),

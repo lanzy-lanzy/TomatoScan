@@ -73,7 +73,8 @@ import com.ml.tomatoscan.viewmodels.UserViewModelFactory
 fun MainScreen() {
     val bottomNavController = rememberNavController()
     val viewModel: TomatoScanViewModel = viewModel()
-    val userViewModel: UserViewModel = viewModel(factory = UserViewModelFactory(LocalContext.current.applicationContext as Application))
+        val application = LocalContext.current.applicationContext as Application
+    val userViewModel: UserViewModel = viewModel(factory = UserViewModelFactory(application))
     Scaffold(
         bottomBar = { BottomBar(navController = bottomNavController, viewModel = viewModel) }
     ) { paddingValues ->

@@ -72,8 +72,8 @@ dependencies {
     // Coil
     implementation("io.coil-kt:coil-compose:2.6.0")
 
-    // Gemini
-    implementation("com.google.ai.client.generativeai:generativeai:0.3.0")
+    // TFLite
+    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
@@ -90,7 +90,7 @@ dependencies {
     // Kotlin Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // MPAndroidChart
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     testImplementation(libs.junit)

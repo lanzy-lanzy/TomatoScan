@@ -77,6 +77,8 @@ import com.ml.tomatoscan.ui.screens.analysis.AnalysisContent
 import com.ml.tomatoscan.ui.screens.analysis.CameraPreview
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.ml.tomatoscan.R
 
 private val UriSaver = Saver<Uri?, String>(
     save = { it?.toString() ?: "" },
@@ -93,8 +95,8 @@ fun AnalysisScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val imageUri by viewModel.analysisImageUri.collectAsState()
     val directCameraMode by viewModel.directCameraMode.collectAsState()
-    var showCameraPreview by rememberSaveable { mutableStateOf(false) }
-    var imageFromCamera by rememberSaveable { mutableStateOf(false) }
+    var showCameraPreview: Boolean by rememberSaveable { mutableStateOf(false) }
+    var imageFromCamera: Boolean by rememberSaveable { mutableStateOf(false) }
 
     val textToSpeech = remember(context) {
         var tts: TextToSpeech? = null
@@ -158,7 +160,7 @@ fun AnalysisScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tomato Analysis") },
+                title = { Text(stringResource(R.string.tomato_analysis)) },
                 navigationIcon = {
                     if (scanResult != null || showCameraPreview || imageUri != null) {
                         IconButton(onClick = {
@@ -168,7 +170,7 @@ fun AnalysisScreen(
                                 else -> viewModel.clearAnalysisState()
                             }
                         }) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                         }
                     }
                 },
@@ -200,7 +202,7 @@ fun AnalysisScreen(
                 val currentUri = imageUri
                 when {
                     isLoading -> {
-                        currentUri?.let { AnalysisInProgressScreen(uri = it) }
+                        AnalysisInProgressScreen(viewModel = viewModel)
                     }
                     scanResult != null -> {
                         currentUri?.let {
@@ -218,16 +220,7 @@ fun AnalysisScreen(
                         ImagePreview(
                             uri = currentUri,
                             fromCamera = imageFromCamera,
-                            onAnalyze = {
-                                val bitmap = if (Build.VERSION.SDK_INT < 28) {
-                                    @Suppress("DEPRECATION")
-                                    MediaStore.Images.Media.getBitmap(context.contentResolver, currentUri)
-                                } else {
-                                    val source = ImageDecoder.createSource(context.contentResolver, currentUri)
-                                    ImageDecoder.decodeBitmap(source)
-                                }
-                                viewModel.analyzeImage(bitmap, currentUri)
-                            },
+                            onAnalyze = { viewModel.analyzeImage(currentUri) },
                             onRetake = {
                                 viewModel.setAnalysisImageUri(null)
                                 if (imageFromCamera) {
@@ -235,7 +228,9 @@ fun AnalysisScreen(
                                 } else {
                                     galleryLauncher.launch("image/*")
                                 }
-                            }
+                            },
+                            viewModel = viewModel,
+                            isLoading = isLoading
                         )
                     }
                     else -> {
@@ -247,14 +242,14 @@ fun AnalysisScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                "Analyze Tomato Quality",
+                                stringResource(R.string.analyze_tomato_quality),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "Capture an image or upload from your gallery to get an instant analysis of your tomato's quality and ripeness.",
+                                stringResource(R.string.capture_image_or_upload_description),
                                 style = MaterialTheme.typography.bodyLarge,
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -289,137 +284,137 @@ private fun ImagePreview(
     uri: Uri,
     fromCamera: Boolean,
     onAnalyze: () -> Unit,
-    onRetake: () -> Unit
+    onRetake: () -> Unit,
+    viewModel: TomatoScanViewModel,
+    isLoading: Boolean
 ) {
-    val context = LocalContext.current
-    val bitmap = remember(uri) {
-        if (Build.VERSION.SDK_INT < 28) {
-            @Suppress("DEPRECATION")
-            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-        } else {
-            val source = ImageDecoder.createSource(context.contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
-        }
-    }
+    val bitmap by viewModel.analysisBitmap.collectAsState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = "Captured Image Preview",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .background(Color.Black.copy(alpha = 0.5f))
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            FilledTonalButton(
-                onClick = onRetake,
-                shape = RoundedCornerShape(50),
-                modifier = Modifier.height(56.dp)
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else if (bitmap != null) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                bitmap = bitmap!!.asImageBitmap(),
+                contentDescription = "Captured Image Preview",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Replay, contentDescription = "Retake")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(if (fromCamera) "Retake" else "Choose Another")
+                FilledTonalButton(
+                    onClick = onRetake,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.height(56.dp)
+                ) {
+                    Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.retake))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (fromCamera) stringResource(R.string.retake) else stringResource(R.string.choose_another))
+                }
+                Button(
+                    onClick = onAnalyze,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(Icons.Default.Science, contentDescription = stringResource(R.string.analyze))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.analyze))
+                }
             }
-            Button(
-                onClick = onAnalyze,
-                shape = RoundedCornerShape(50),
-                modifier = Modifier.height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Icon(Icons.Default.Science, contentDescription = "Analyze")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Analyze")
-            }
+        }
+    } else {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
     }
 }
 
 @Composable
-private fun AnalysisInProgressScreen(uri: Uri) {
-    val context = LocalContext.current
-    val bitmap = remember(uri) {
-        if (Build.VERSION.SDK_INT < 28) {
-            @Suppress("DEPRECATION")
-            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-        } else {
-            val source = ImageDecoder.createSource(context.contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
-        }
-    }
+private fun AnalysisInProgressScreen(viewModel: TomatoScanViewModel) {
+    val bitmap by viewModel.analysisBitmap.collectAsState()
 
-    val infiniteTransition = rememberInfiniteTransition(label = "scanner")
-    val scanPosition by infiniteTransition.animateFloat(
-        initialValue = -0.1f, // Start off-screen
-        targetValue = 1.1f, // End off-screen
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "scan_position"
-    )
-    val primaryColor = MaterialTheme.colorScheme.primary
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = "Analyzing Image",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+    if (bitmap != null) {
+        val infiniteTransition = rememberInfiniteTransition(label = "scanner")
+        val scanPosition by infiniteTransition.animateFloat(
+            initialValue = -0.1f, // Start off-screen
+            targetValue = 1.1f, // End off-screen
+            animationSpec = infiniteRepeatable(
+                animation = tween(2000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "scan_position"
         )
+        val primaryColor = MaterialTheme.colorScheme.primary
 
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val canvasHeight = size.height
-            val canvasWidth = size.width
-            val lineY = canvasHeight * scanPosition
-
-            // Dark overlay
-            drawRect(color = Color.Black.copy(alpha = 0.6f))
-
-            // Glowing scanner line
-            val scannerBrush = Brush.verticalGradient(
-                colors = listOf(
-                    primaryColor.copy(alpha = 0f),
-                    primaryColor.copy(alpha = 0.8f),
-                    primaryColor,
-                    primaryColor.copy(alpha = 0.8f),
-                    primaryColor.copy(alpha = 0f)
-                ),
-                startY = lineY - 20.dp.toPx(),
-                endY = lineY + 20.dp.toPx()
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                bitmap = bitmap!!.asImageBitmap(),
+                contentDescription = "Analyzing Image",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
             )
-            drawLine(
-                brush = scannerBrush,
-                start = Offset(0f, lineY),
-                end = Offset(canvasWidth, lineY),
-                strokeWidth = 40.dp.toPx(),
-                cap = StrokeCap.Round
-            )
+
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val canvasHeight = size.height
+                val canvasWidth = size.width
+                val lineY = canvasHeight * scanPosition
+
+                // Dark overlay
+                drawRect(color = Color.Black.copy(alpha = 0.6f))
+
+                // Glowing scanner line
+                val scannerBrush = Brush.verticalGradient(
+                    colors = listOf(
+                        primaryColor.copy(alpha = 0f),
+                        primaryColor.copy(alpha = 0.8f),
+                        primaryColor,
+                        primaryColor.copy(alpha = 0.8f),
+                        primaryColor.copy(alpha = 0f)
+                    ),
+                    startY = lineY - 20.dp.toPx(),
+                    endY = lineY + 20.dp.toPx()
+                )
+                drawLine(
+                    brush = scannerBrush,
+                    start = Offset(0f, lineY),
+                    end = Offset(canvasWidth, lineY),
+                    strokeWidth = 40.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            }
+
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(64.dp),
+                    color = Color.White,
+                    strokeWidth = 4.dp
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    stringResource(R.string.analyzing),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
-
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(64.dp),
-                color = Color.White,
-                strokeWidth = 4.dp
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "Analyzing...",
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
+    } else {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
     }
 }

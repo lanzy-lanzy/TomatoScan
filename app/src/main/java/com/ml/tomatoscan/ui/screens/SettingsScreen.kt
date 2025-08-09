@@ -35,6 +35,7 @@ fun SettingsScreen(
     var showAboutDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
+    var showClearDataDialog by remember { mutableStateOf(false) }
     val userName by userViewModel.userName.collectAsState()
 
     val backgroundGradient = Brush.verticalGradient(
@@ -126,7 +127,7 @@ fun SettingsScreen(
                             icon = Icons.Default.DeleteSweep,
                             title = "Clear Data",
                             subtitle = "Remove all local data",
-                            onClick = { /* TODO */ },
+                            onClick = { showClearDataDialog = true },
                             textColor = MaterialTheme.colorScheme.error,
                             hasNavigation = false
                         )
@@ -173,6 +174,43 @@ fun SettingsScreen(
             }
         )
     }
+
+    if (showClearDataDialog) {
+        ClearDataConfirmationDialog(
+            onConfirm = {
+                userViewModel.clearAllData()
+                showClearDataDialog = false
+            },
+            onDismiss = { showClearDataDialog = false }
+        )
+    }
+}
+
+@Composable
+fun ClearDataConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Clear All Data") },
+        text = { Text("Are you sure you want to clear all local data? This action cannot be undone.") },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Clear Data")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable

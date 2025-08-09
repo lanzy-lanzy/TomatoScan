@@ -1,17 +1,18 @@
 package com.ml.tomatoscan.viewmodels
 
 import android.app.Application
-import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import android.graphics.ImageDecoder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.ml.tomatoscan.data.FirebaseData
 import coil.ImageLoader
-import com.ml.tomatoscan.data.GeminiApi
 import com.ml.tomatoscan.data.HistoryRepository
 import com.ml.tomatoscan.models.ScanResult
 import com.ml.tomatoscan.utils.DatabaseImageFetcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,18 +20,21 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Date
 
 class TomatoScanViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val geminiApi = GeminiApi()
-    private val firebaseData = FirebaseData()
     private val historyRepository: HistoryRepository = HistoryRepository(application)
+    // TFLite classifier removed; relying solely on Gemini analysis
+    private val geminiService = com.ml.tomatoscan.data.GeminiService(com.ml.tomatoscan.data.GeminiConfig::provideApiKey)
 
     val imageLoader: ImageLoader = ImageLoader.Builder(application)
         .components {
-            add(DatabaseImageFetcher.Factory(application))
+            add(DatabaseImageFetcher.Factory(application, historyRepository))
         }
         .build()
 
@@ -43,6 +47,11 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
     val scanHistory: StateFlow<List<ScanResult>> = historyRepository.getHistory()
         .onStart { _isHistoryLoading.value = true }
         .onEach { _isHistoryLoading.value = false }
+        .catch { throwable ->
+            android.util.Log.e("TomatoScanViewModel", "Error loading history", throwable)
+            _isHistoryLoading.value = false
+            emit(emptyList())
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -61,66 +70,141 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
     private val _directCameraMode = MutableStateFlow(false)
     val directCameraMode: StateFlow<Boolean> = _directCameraMode
 
-
+    private val _analysisBitmap = MutableStateFlow<Bitmap?>(null)
+    val analysisBitmap: StateFlow<Bitmap?> = _analysisBitmap
 
     fun setAnalysisImageUri(uri: Uri?) {
         _analysisImageUri.value = uri
+        _scanResult.value = null
+        _isLoading.value = false
+        if (uri == null) {
+            _analysisBitmap.value = null
+            return
+        }
+        // Preload bitmap for preview so the UI doesn't show an indefinite spinner
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val bm = if (Build.VERSION.SDK_INT < 28) {
+                    @Suppress("DEPRECATION")
+                    MediaStore.Images.Media.getBitmap(getApplication<Application>().contentResolver, uri)
+                } else {
+                    val source = ImageDecoder.createSource(getApplication<Application>().contentResolver, uri)
+                    ImageDecoder.decodeBitmap(source)
+                }
+                _analysisBitmap.value = bm
+            } catch (e: Exception) {
+                android.util.Log.e("TomatoScanViewModel", "Failed to load preview bitmap", e)
+                _analysisBitmap.value = null
+            }
+        }
     }
 
     fun setDirectCameraMode(enabled: Boolean) {
         _directCameraMode.value = enabled
     }
 
-    fun analyzeImage(bitmap: Bitmap, imageUri: Uri) {
+    fun analyzeImage(imageUri: Uri) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                val bitmap = if (Build.VERSION.SDK_INT < 28) {
+                    @Suppress("DEPRECATION")
+                    MediaStore.Images.Media.getBitmap(getApplication<Application>().contentResolver, imageUri)
+                } else {
+                    val source = ImageDecoder.createSource(getApplication<Application>().contentResolver, imageUri)
+                    ImageDecoder.decodeBitmap(source)
+                }
+                _analysisBitmap.value = bitmap
+
                 android.util.Log.d("TomatoScanViewModel", "Starting tomato leaf disease analysis...")
-                
-                // Call the real Gemini API for analysis
-                val analysisResult = geminiApi.analyzeTomatoLeaf(bitmap)
-                
-                // Store image locally instead of cloud upload
-                val imageUrl = imageUri.toString()
-                
-                // Convert to legacy quality format for UI compatibility
-                val quality = when {
-                    analysisResult.diseaseDetected.equals("Invalid Image", ignoreCase = true) -> "Invalid"
-                    analysisResult.diseaseDetected.equals("Healthy", ignoreCase = true) -> "Excellent"
-                    analysisResult.severity.equals("Mild", ignoreCase = true) -> "Good"
-                    analysisResult.severity.equals("Moderate", ignoreCase = true) -> "Fair"
-                    else -> "Poor"
+
+                // Gemini-only analysis with timeout on IO dispatcher
+                val gemini = withTimeoutOrNull(45_000) {
+                    withContext(Dispatchers.IO) {
+                        runCatching { geminiService.analyzeTomatoLeaf(bitmap) }.getOrNull()
+                    }
                 }
-                
-                val result = ScanResult(
-                    imageUrl = imageUrl,
-                    quality = quality,
-                    confidence = analysisResult.confidence,
-                    timestamp = Date().time,
-                    diseaseDetected = analysisResult.diseaseDetected,
-                    severity = analysisResult.severity,
-                    description = analysisResult.description,
-                    recommendations = analysisResult.recommendations,
-                    treatmentOptions = analysisResult.treatmentOptions,
-                    preventionMeasures = analysisResult.preventionMeasures
-                )
-                
-                android.util.Log.d("TomatoScanViewModel", "Analysis complete - Disease: ${result.diseaseDetected}, Severity: ${result.severity}")
+
+                // Build overlay boxes from Gemini
+                val affectedBoxes = gemini?.affectedAreas?.mapNotNull { area ->
+                    val b = area.box
+                    if (b.size == 4) com.ml.tomatoscan.models.LeafOverlayBox(
+                        label = area.label,
+                        x1 = b[0], y1 = b[1], y2 = b[3], x2 = b[2]
+                    ) else null
+                } ?: emptyList()
+
+                // Build description from Gemini (only for tomato images)
+                val descParts = mutableListOf<String>()
+                if (gemini?.isTomato != false) {
+                    // Only build detailed description for tomato images
+                    if (!gemini?.description.isNullOrBlank()) descParts.add(gemini!!.description)
+                    if (!gemini?.symptoms.isNullOrEmpty()) {
+                        descParts.add("Symptoms: " + gemini!!.symptoms.joinToString(", "))
+                    }
+                    gemini?.prognosis?.let { if (it.isNotBlank()) descParts.add("Prognosis: $it") }
+                    if (gemini == null && descParts.isEmpty()) {
+                        descParts.add("Gemini analysis unavailable. Please check your network connection or API key and try again.")
+                    }
+                }
+
+                val result = if (gemini?.isTomato == false) {
+                    // Not a tomato image - set confidence to 100% that it's not a tomato
+                    ScanResult(
+                        imageUrl = imageUri.toString(),
+                        quality = "Not Applicable",
+                        confidence = 100f, // High confidence it's not a tomato
+                        timestamp = Date().time,
+                        diseaseDetected = "Not Tomato",
+                        severity = "Not Applicable",
+                        description = gemini.description.ifBlank { "This image does not appear to contain a tomato leaf. Please upload an image of a tomato leaf for analysis." },
+                        recommendations = emptyList(),
+                        treatmentOptions = emptyList(),
+                        preventionMeasures = emptyList(),
+                        imageBitmap = null,
+                        affectedAreas = emptyList(),
+                        prognosis = "",
+                        recommendationsImmediate = emptyList(),
+                        recommendationsShortTerm = emptyList(),
+                        recommendationsLongTerm = emptyList()
+                    )
+                } else {
+                    // Valid tomato image
+                    ScanResult(
+                        imageUrl = imageUri.toString(),
+                        quality = (gemini?.severity ?: "Unknown"),
+                        confidence = (gemini?.confidence ?: 0f).coerceIn(0f, 100f),
+                        timestamp = Date().time,
+                        diseaseDetected = (gemini?.disease ?: "Unknown"),
+                        severity = (gemini?.severity ?: "Unknown"),
+                        description = descParts.joinToString("\n\n").ifBlank { "Could not identify the disease." },
+                        recommendations = gemini?.recommendationsImmediate.orEmpty() +
+                            gemini?.recommendationsShortTerm.orEmpty() +
+                            gemini?.recommendationsLongTerm.orEmpty(),
+                        treatmentOptions = gemini?.treatmentOptions ?: emptyList(),
+                        preventionMeasures = gemini?.preventionMeasures ?: emptyList(),
+                        imageBitmap = null,
+                        affectedAreas = affectedBoxes,
+                        prognosis = gemini?.prognosis ?: "",
+                        recommendationsImmediate = gemini?.recommendationsImmediate ?: emptyList(),
+                        recommendationsShortTerm = gemini?.recommendationsShortTerm ?: emptyList(),
+                        recommendationsLongTerm = gemini?.recommendationsLongTerm ?: emptyList()
+                    )
+                }
+
+                if (gemini?.isTomato == false) {
+                    android.util.Log.d("TomatoScanViewModel", "Analysis complete - Not a tomato image")
+                } else {
+                    android.util.Log.d("TomatoScanViewModel", "Analysis complete - Disease: ${result.diseaseDetected}, Severity: ${result.severity}")
+                }
                 _scanResult.value = result
-                
-                // Save to local Room database with image
-                try {
-                    historyRepository.saveToHistory(result, imageUri, bitmap)
-                    android.util.Log.d("TomatoScanViewModel", "Saved to Room database successfully")
-                } catch (e: Exception) {
-                    android.util.Log.e("TomatoScanViewModel", "Failed to save to Room database", e)
-                }
-                
+
+                historyRepository.saveToHistory(result, imageUri, bitmap)
+
             } catch (e: Exception) {
                 android.util.Log.e("TomatoScanViewModel", "Analysis failed with error: ${e.message}", e)
                 e.printStackTrace()
-                
-                // Create error result with disease analysis structure
+
                 val errorResult = ScanResult(
                     imageUrl = imageUri.toString(),
                     quality = "Error",
@@ -129,9 +213,6 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
                     diseaseDetected = "Analysis Error",
                     severity = "Unknown",
                     description = "Unable to analyze the image: ${e.message}",
-                    recommendations = listOf("Please try again with a clearer image", "Ensure good lighting conditions"),
-                    treatmentOptions = listOf("Consult with a local agricultural expert"),
-                    preventionMeasures = listOf("Regular monitoring", "Proper plant spacing")
                 )
                 _scanResult.value = errorResult
             } finally {
@@ -141,94 +222,30 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    private fun createMockAnalysisResult(): com.ml.tomatoscan.data.TomatoAnalysisResult {
-        val diseases = listOf("Healthy", "Early Blight", "Late Blight", "Septoria Leaf Spot", "Bacterial Spot")
-        val severities = listOf("Healthy", "Mild", "Moderate", "Severe")
-        val confidences = listOf(95.5f, 87.2f, 78.8f, 92.1f, 85.3f)
-        
-        val randomIndex = (0..4).random()
-        val disease = diseases[randomIndex]
-        val severity = if (disease == "Healthy") "Healthy" else severities[(1..3).random()]
-        
-        return com.ml.tomatoscan.data.TomatoAnalysisResult(
-            diseaseDetected = disease,
-            confidence = confidences[randomIndex],
-            severity = severity,
-            description = when (disease) {
-                "Healthy" -> "The tomato leaf appears healthy with no visible signs of disease. Good color and structure observed."
-                "Early Blight" -> "Dark spots with concentric rings visible on leaves, characteristic of Alternaria solani infection."
-                "Late Blight" -> "Water-soaked lesions with white fuzzy growth detected, indicating Phytophthora infestans."
-                "Septoria Leaf Spot" -> "Small circular spots with gray centers and dark borders observed on leaf surface."
-                "Bacterial Spot" -> "Small, dark, greasy spots with yellow halos detected, indicating bacterial infection."
-                else -> "Analysis completed successfully."
-            },
-            recommendations = when (disease) {
-                "Healthy" -> listOf("Continue current care routine", "Monitor regularly for changes", "Maintain good air circulation")
-                "Early Blight" -> listOf("Remove affected leaves immediately", "Improve air circulation", "Apply fungicide treatment")
-                "Late Blight" -> listOf("Isolate plant immediately", "Remove all infected material", "Apply copper-based fungicide")
-                "Septoria Leaf Spot" -> listOf("Remove affected leaves", "Avoid overhead watering", "Apply preventive fungicide")
-                "Bacterial Spot" -> listOf("Remove infected plant parts", "Avoid water splash", "Apply copper bactericide")
-                else -> listOf("Monitor plant closely", "Consult agricultural expert", "Follow best practices")
-            },
-            treatmentOptions = when (disease) {
-                "Healthy" -> listOf("No treatment needed", "Preventive care only", "Regular monitoring")
-                else -> listOf("Organic fungicide spray", "Copper-based treatment", "Systemic fungicide application")
-            },
-            preventionMeasures = listOf("Proper plant spacing", "Good air circulation", "Avoid overhead watering", "Regular inspection")
-        )
-    }
-
-    private fun createMockResult(imageUri: Uri): ScanResult {
-        // Create realistic mock results for testing
-        val qualities = listOf("Excellent", "Good", "Fair", "Poor", "Unripe")
-        val confidences = listOf(95.5f, 87.2f, 78.8f, 65.3f, 92.1f)
-        
-        val randomIndex = (0..4).random()
-        
-        return ScanResult(
-            imageUrl = imageUri.toString(),
-            quality = qualities[randomIndex],
-            confidence = confidences[randomIndex],
-            timestamp = Date().time
-        )
-    }
-
     fun clearAnalysisState() {
         _scanResult.value = null
         _analysisImageUri.value = null
+        _analysisBitmap.value = null
         _directCameraMode.value = false
     }
 
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            // Data is already live from Room, so we just show the indicator for a bit for good UX.
             delay(1500)
             _isRefreshing.value = false
         }
     }
 
-
-
     fun deleteFromHistory(scanResult: ScanResult) {
         viewModelScope.launch {
-            try {
-                historyRepository.deleteFromHistory(scanResult)
-                android.util.Log.d("TomatoScanViewModel", "Deleted item from history")
-            } catch (e: Exception) {
-                android.util.Log.e("TomatoScanViewModel", "Failed to delete from history", e)
-            }
+            historyRepository.deleteFromHistory(scanResult)
         }
     }
 
     fun clearHistory() {
         viewModelScope.launch {
-            try {
-                historyRepository.clearHistory()
-                android.util.Log.d("TomatoScanViewModel", "Cleared all history")
-            } catch (e: Exception) {
-                android.util.Log.e("TomatoScanViewModel", "Failed to clear history", e)
-            }
+            historyRepository.clearHistory()
         }
     }
 }

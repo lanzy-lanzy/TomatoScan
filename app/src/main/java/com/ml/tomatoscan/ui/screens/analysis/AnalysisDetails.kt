@@ -117,7 +117,7 @@ fun QualityDetails(quality: String, scanResult: ScanResult? = null) {
             )
         }
         scanResult?.let {
-            if (it.diseaseDetected != "Healthy") {
+            if (it.diseaseDetected != "Healthy" && it.diseaseDetected != "Not Tomato") {
                 Spacer(modifier = Modifier.height(24.dp))
                 DiseaseAnalysisDetails(scanResult = it)
             }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
@@ -44,15 +45,15 @@ class HistoryRepository(private val context: Context) {
             val analysisEntity = AnalysisEntity(
                 imageData = imageData ?: ByteArray(0),
                 imagePath = imagePath,
-                diseaseDetected = scanResult.diseaseDetected,
-                severity = scanResult.severity,
-                confidence = scanResult.confidence,
+                diseaseDetected = scanResult.diseaseDetected.takeIf { it.isNotEmpty() } ?: "Unknown",
+                severity = scanResult.severity.takeIf { it.isNotEmpty() } ?: "Unknown",
+                confidence = scanResult.confidence.coerceIn(0f, 100f),
                 description = scanResult.description,
-                recommendations = scanResult.recommendations,
-                treatmentOptions = scanResult.treatmentOptions,
-                preventionMeasures = scanResult.preventionMeasures,
-                timestamp = Date(scanResult.timestamp),
-                quality = scanResult.quality
+                recommendations = scanResult.recommendations.filterNot { it.isBlank() },
+                treatmentOptions = scanResult.treatmentOptions.filterNot { it.isBlank() },
+                preventionMeasures = scanResult.preventionMeasures.filterNot { it.isBlank() },
+                timestamp = Date(scanResult.timestamp.coerceAtLeast(0)),
+                quality = scanResult.quality.takeIf { it.isNotEmpty() } ?: "Unknown"
             )
             
             val id = analysisDao.insertAnalysis(analysisEntity)
@@ -66,29 +67,39 @@ class HistoryRepository(private val context: Context) {
         }
     }
 
-            fun getHistory(): Flow<List<ScanResult>> {
-        return analysisDao.getRecentAnalyses(100).map { analyses ->
-            analyses.map { entity ->
-                val imageUri = if (entity.imageData.isNotEmpty()) {
-                    createImageUriFromByteArray(entity.imageData)
-                } else {
-                    entity.imagePath ?: ""
-                }
+    fun getHistory(): Flow<List<ScanResult>> {
+        return analysisDao.getRecentAnalyses(100)
+            .map { analyses ->
+                analyses.mapNotNull { entity ->
+                    try {
+                        val imageUri = if (entity.imageData.isNotEmpty()) {
+                            createImageUriFromByteArray(entity.imageData)
+                        } else {
+                            entity.imagePath ?: ""
+                        }
 
-                ScanResult(
-                    imageUrl = imageUri,
-                    quality = entity.quality,
-                    confidence = entity.confidence,
-                    timestamp = entity.timestamp.time,
-                    diseaseDetected = entity.diseaseDetected,
-                    severity = entity.severity,
-                    description = entity.description,
-                    recommendations = entity.recommendations,
-                    treatmentOptions = entity.treatmentOptions,
-                    preventionMeasures = entity.preventionMeasures
-                )
+                        ScanResult(
+                            imageUrl = imageUri,
+                            quality = entity.quality.takeIf { it.isNotEmpty() } ?: "Unknown",
+                            confidence = entity.confidence.coerceIn(0f, 100f),
+                            timestamp = entity.timestamp.time,
+                            diseaseDetected = entity.diseaseDetected.takeIf { it.isNotEmpty() } ?: "Unknown",
+                            severity = entity.severity.takeIf { it.isNotEmpty() } ?: "Unknown",
+                            description = entity.description,
+                            recommendations = entity.recommendations.filterNot { it.isBlank() },
+                            treatmentOptions = entity.treatmentOptions.filterNot { it.isBlank() },
+                            preventionMeasures = entity.preventionMeasures.filterNot { it.isBlank() }
+                        )
+                    } catch (e: Exception) {
+                        Log.e("HistoryRepository", "Error processing analysis entity: ${entity.id}", e)
+                        null
+                    }
+                }
             }
-        }
+            .catch { throwable ->
+                Log.e("HistoryRepository", "Error getting history from database", throwable)
+                emit(emptyList())
+            }
     }
 
     suspend fun deleteFromHistory(scanResult: ScanResult) = withContext(Dispatchers.IO) {
@@ -169,6 +180,31 @@ class HistoryRepository(private val context: Context) {
         }
     }
 
+    suspend fun getScanResultByTimestamp(timestamp: Long): ScanResult? = withContext(Dispatchers.IO) {
+        try {
+            val entity = analysisDao.findAnalysisByTimestamp(Date(timestamp))
+            entity?.let { 
+                val bitmap = imageStorageHelper.byteArrayToBitmap(it.imageData)
+                ScanResult(
+                    imageUrl = it.imagePath ?: "",
+                    quality = it.quality,
+                    confidence = it.confidence,
+                    timestamp = it.timestamp.time,
+                    diseaseDetected = it.diseaseDetected,
+                    severity = it.severity,
+                    description = it.description,
+                    recommendations = it.recommendations,
+                    treatmentOptions = it.treatmentOptions,
+                    preventionMeasures = it.preventionMeasures,
+                    imageBitmap = bitmap
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("HistoryRepository", "Failed to get scan result by timestamp", e)
+            null
+        }
+    }
+
     private suspend fun cleanupOldAnalyses() {
         try {
             val totalCount = analysisDao.getAnalysisCount()
@@ -189,6 +225,16 @@ class HistoryRepository(private val context: Context) {
     private suspend fun createImageUriFromByteArray(byteArray: ByteArray): String {
         return try {
             if (byteArray.isEmpty()) return ""
+            
+            // Validate the byte array is a valid image
+            val options = android.graphics.BitmapFactory.Options()
+            options.inJustDecodeBounds = true
+            android.graphics.BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
+            
+            if (options.outWidth == -1 || options.outHeight == -1) {
+                Log.w("HistoryRepository", "Invalid image data in byte array")
+                return ""
+            }
             
             // Create a temporary file to store the image
             val tempFile = File(context.cacheDir, "temp_analysis_${System.currentTimeMillis()}.jpg")

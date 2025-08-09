@@ -28,6 +28,8 @@ import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.ml.tomatoscan.models.ScanResult
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
+import androidx.compose.ui.res.stringResource
+import com.ml.tomatoscan.R
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,7 +44,7 @@ fun AnalyticsScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Scan Analytics", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.scan_analytics), fontWeight = FontWeight.Bold) },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -68,7 +70,7 @@ fun AnalyticsScreen(
                     modifier = Modifier.fillMaxSize().padding(64.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No analytics data available.")
+                    Text(stringResource(R.string.no_analytics_data_available))
                 }
             } else {
                 AnalyticsSummary(scanHistory = scanHistory)
@@ -91,7 +93,7 @@ fun AnalyticsSummary(scanHistory: List<ScanResult>) {
 
     Column {
         Text(
-            "Summary",
+            stringResource(R.string.summary),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -100,17 +102,17 @@ fun AnalyticsSummary(scanHistory: List<ScanResult>) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SummaryCard("Total Scans", totalScans.toString(), Modifier.weight(1f))
-            SummaryCard("Healthy", healthyCount.toString(), Modifier.weight(1f), Color(0xFF4CAF50))
+            SummaryCard(stringResource(R.string.total_scans), totalScans.toString(), Modifier.weight(1f))
+            SummaryCard(stringResource(R.string.healthy), healthyCount.toString(), Modifier.weight(1f), Color(0xFF4CAF50))
         }
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SummaryCard("Mild", mildCount.toString(), Modifier.weight(1f), Color(0xFF8BC34A))
-            SummaryCard("Moderate", moderateCount.toString(), Modifier.weight(1f), Color(0xFFFF9800))
-            SummaryCard("Severe", severeCount.toString(), Modifier.weight(1f), Color(0xFFF44336))
+            SummaryCard(stringResource(R.string.mild), mildCount.toString(), Modifier.weight(1f), Color(0xFF8BC34A))
+            SummaryCard(stringResource(R.string.moderate), moderateCount.toString(), Modifier.weight(1f), Color(0xFFFF9800))
+            SummaryCard(stringResource(R.string.severe), severeCount.toString(), Modifier.weight(1f), Color(0xFFF44336))
         }
     }
 }
@@ -169,7 +171,7 @@ fun AnalyticsChart(scanHistory: List<ScanResult>) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Severity Distribution",
+                text = stringResource(R.string.severity_distribution),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -224,7 +226,7 @@ fun AnalyticsChart(scanHistory: List<ScanResult>) {
                         .height(300.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Not enough data to display chart.")
+                    Text(stringResource(R.string.not_enough_data_to_display_chart))
                 }
             }
         }

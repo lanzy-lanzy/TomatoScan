@@ -15,5 +15,12 @@ data class ScanResult(
     val description: String = "",
     val recommendations: List<String> = emptyList(),
     val treatmentOptions: List<String> = emptyList(),
-    val preventionMeasures: List<String> = emptyList()
+    val preventionMeasures: List<String> = emptyList(),
+    val imageBitmap: android.graphics.Bitmap? = null,
+    // Gemini extras
+    val affectedAreas: List<com.ml.tomatoscan.models.LeafOverlayBox> = emptyList(),
+    val prognosis: String = "",
+    val recommendationsImmediate: List<String> = emptyList(),
+    val recommendationsShortTerm: List<String> = emptyList(),
+    val recommendationsLongTerm: List<String> = emptyList()
 ) : Parcelable

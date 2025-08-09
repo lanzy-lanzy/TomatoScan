@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 
 import android.net.Uri
 
-class UserViewModel(application: Application) : ViewModel() {
+class UserViewModel(application: Application, private val historyRepository: com.ml.tomatoscan.data.HistoryRepository) : ViewModel() {
 
     private val sharedPreferences = application.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
@@ -54,13 +54,29 @@ class UserViewModel(application: Application) : ViewModel() {
             }
         }
     }
+
+    fun clearAllData() {
+        viewModelScope.launch {
+            // Clear SharedPreferences
+            with(sharedPreferences.edit()) {
+                clear()
+                apply()
+            }
+            // Clear history
+            historyRepository.clearHistory()
+
+            // Reset the state
+            loadUserName()
+            loadUserProfilePictureUri()
+        }
+    }
 }
 
 class UserViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(UserViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return UserViewModel(application) as T
+            return UserViewModel(application, com.ml.tomatoscan.data.HistoryRepository(application)) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

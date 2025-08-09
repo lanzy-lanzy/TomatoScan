@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import android.util.Log
+import androidx.compose.ui.res.stringResource
+import com.ml.tomatoscan.R
 import coil.compose.AsyncImage
 import coil.ImageLoader
 import coil.request.ImageRequest
@@ -64,7 +66,7 @@ fun HistoryScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Analysis History",
+                        stringResource(R.string.analysis_history),
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -73,7 +75,7 @@ fun HistoryScreen(
                         IconButton(onClick = { showClearAllDialog = true }) {
                             Icon(
                                 Icons.Default.DeleteSweep,
-                                contentDescription = "Clear All",
+                                contentDescription = stringResource(R.string.clear_all),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -95,7 +97,7 @@ fun HistoryScreen(
             ) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("New Scan")
+                Text(stringResource(R.string.new_scan))
             }
         }
     ) { innerPadding ->
@@ -173,7 +175,7 @@ fun LoadingHistoryIndicator() {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "Loading history...",
+                stringResource(R.string.loading_history),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -208,7 +210,7 @@ fun EmptyHistoryState(onStartScan: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    "No Analysis History",
+                    stringResource(R.string.no_analysis_history),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -217,7 +219,7 @@ fun EmptyHistoryState(onStartScan: () -> Unit) {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    "Start analyzing tomato leaves to see your history here.",
+                    stringResource(R.string.start_analyzing_tomato_leaves),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -231,7 +233,7 @@ fun EmptyHistoryState(onStartScan: () -> Unit) {
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Start Your First Scan")
+                    Text(stringResource(R.string.start_your_first_scan))
                 }
             }
         }
@@ -252,7 +254,7 @@ fun HistoryContent(
     ) {
         item {
             Text(
-                "Recent Scans (${scanHistory.size})",
+                stringResource(R.string.recent_scans_count, scanHistory.size),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -284,6 +286,32 @@ fun HistoryItem(
     val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy • HH:mm", Locale.getDefault()) }
     val diseaseColor = getHistoryDiseaseColor(scanResult.severity)
+    
+    // Validate scan result data
+    val isValidData = remember(scanResult) {
+        scanResult.timestamp > 0 && 
+        scanResult.confidence >= 0f && 
+        scanResult.confidence <= 100f
+    }
+    
+    if (!isValidData) {
+        // Show error card for invalid data
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Text(
+                text = stringResource(R.string.error_loading_scan_data),
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
+        return
+    }
 
     Card(
         modifier = Modifier
@@ -299,9 +327,11 @@ fun HistoryItem(
             // Image
             AsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(scanResult.imageUrl)
+                    .data(scanResult.imageUrl.takeIf { it.isNotEmpty() })
                     .memoryCacheKey(scanResult.timestamp.toString())
                     .crossfade(true)
+                    .error(android.R.drawable.ic_menu_report_image)
+                    .fallback(android.R.drawable.ic_menu_gallery)
                     .build(),
                 imageLoader = imageLoader,
                 contentDescription = "Scanned tomato leaf",
@@ -311,7 +341,7 @@ fun HistoryItem(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentScale = ContentScale.Crop,
                 onError = {
-                    Log.d("HistoryItem", "Failed to load image: ${scanResult.imageUrl}")
+                    Log.w("HistoryItem", "Failed to load image: ${scanResult.imageUrl}")
                 }
             )
             
@@ -334,7 +364,7 @@ fun HistoryItem(
                         overflow = TextOverflow.Ellipsis
                     )
                     
-                    if (scanResult.severity.isNotEmpty() && scanResult.severity != "Unknown") {
+                    if (scanResult.severity.isNotEmpty() && scanResult.severity != "Unknown" && scanResult.diseaseDetected != "Not Tomato") {
                         Spacer(modifier = Modifier.width(8.dp))
                         SeverityChip(severity = scanResult.severity)
                     }
@@ -342,16 +372,39 @@ fun HistoryItem(
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
+                val confidenceText = remember(scanResult.confidence) {
+                    try {
+                        String.format("%.1f", scanResult.confidence)
+                    } catch (e: Exception) {
+                        Log.w("HistoryItem", "Error formatting confidence: ${scanResult.confidence}", e)
+                        scanResult.confidence.toInt().toString()
+                    }
+                }
+                
                 Text(
-                    text = "Confidence: ${String.format("%.1f", scanResult.confidence)}%",
+                    text = stringResource(R.string.confidence_percentage, confidenceText),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
+                val formattedDate = remember(scanResult.timestamp) {
+                    try {
+                        if (scanResult.timestamp > 0) {
+                            dateFormat.format(Date(scanResult.timestamp))
+                        } else {
+                            "Invalid date"
+                        }
+                    } catch (e: Exception) {
+                        Log.e("HistoryItem", "Error formatting date: ${scanResult.timestamp}", e)
+                        "Invalid date"
+                    }
+                }
+                
                 Text(
-                    text = dateFormat.format(Date(scanResult.timestamp)),
+                    text = if (formattedDate == "Invalid date") 
+                        stringResource(R.string.invalid_date) else formattedDate,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -375,7 +428,7 @@ fun HistoryItem(
                 IconButton(onClick = onDeleteClick) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = stringResource(R.string.delete),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -413,7 +466,7 @@ fun ScanResultDetailDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "Analysis Details",
+                stringResource(R.string.analysis_details),
                 fontWeight = FontWeight.Bold
             )
         },
@@ -449,18 +502,18 @@ fun ScanResultDetailDialog(
                             modifier = Modifier.padding(16.dp)
                         ) {
                             if (scanResult.diseaseDetected.isNotEmpty() && scanResult.diseaseDetected != "Unknown") {
-                                DetailRow("Disease", scanResult.diseaseDetected)
-                                DetailRow("Severity", scanResult.severity)
+                                DetailRow(stringResource(R.string.disease), scanResult.diseaseDetected)
+                                DetailRow(stringResource(R.string.severity), scanResult.severity)
                             } else {
-                                DetailRow("Quality", scanResult.quality)
+                                DetailRow(stringResource(R.string.quality), scanResult.quality)
                             }
-                            DetailRow("Confidence", "${String.format("%.1f", scanResult.confidence)}%")
-                            DetailRow("Date", dateFormat.format(scanResult.timestamp))
+                            DetailRow(stringResource(R.string.confidence), "${String.format("%.1f", scanResult.confidence)}%")
+                            DetailRow(stringResource(R.string.date), dateFormat.format(scanResult.timestamp))
                             
                             if (scanResult.description.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    "Description:",
+                                    stringResource(R.string.description_colon),
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -477,28 +530,28 @@ fun ScanResultDetailDialog(
                 // Recommendations
                 if (scanResult.recommendations.isNotEmpty()) {
                     item {
-                        DetailSection("Recommendations", scanResult.recommendations, Icons.Default.Lightbulb)
+                        DetailSection(stringResource(R.string.recommendations), scanResult.recommendations, Icons.Default.Lightbulb)
                     }
                 }
                 
                 // Treatment Options
                 if (scanResult.treatmentOptions.isNotEmpty()) {
                     item {
-                        DetailSection("Treatment Options", scanResult.treatmentOptions, Icons.Default.LocalHospital)
+                        DetailSection(stringResource(R.string.treatment_options), scanResult.treatmentOptions, Icons.Default.LocalHospital)
                     }
                 }
                 
                 // Prevention Measures
                 if (scanResult.preventionMeasures.isNotEmpty()) {
                     item {
-                        DetailSection("Prevention Measures", scanResult.preventionMeasures, Icons.Default.Shield)
+                        DetailSection(stringResource(R.string.prevention_measures), scanResult.preventionMeasures, Icons.Default.Shield)
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.close))
             }
         }
     )
@@ -581,10 +634,10 @@ fun DeleteConfirmationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Delete Analysis")
+            Text(stringResource(R.string.delete_analysis))
         },
         text = {
-            Text("Are you sure you want to delete this analysis? This action cannot be undone.")
+            Text(stringResource(R.string.delete_analysis_confirmation))
         },
         confirmButton = {
             TextButton(
@@ -593,12 +646,12 @@ fun DeleteConfirmationDialog(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Delete")
+                Text(stringResource(R.string.delete))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )
@@ -612,10 +665,10 @@ fun ClearAllConfirmationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Clear All History")
+            Text(stringResource(R.string.clear_all_history))
         },
         text = {
-            Text("Are you sure you want to clear all analysis history? This action cannot be undone.")
+            Text(stringResource(R.string.clear_all_history_confirmation))
         },
         confirmButton = {
             TextButton(
@@ -624,12 +677,12 @@ fun ClearAllConfirmationDialog(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Clear All")
+                Text(stringResource(R.string.clear_all))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

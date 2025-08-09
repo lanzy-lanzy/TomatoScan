@@ -29,6 +29,8 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
 import java.io.File
+import androidx.compose.ui.res.stringResource
+import com.ml.tomatoscan.R
 
 @Composable
 fun CaptureImageScreen(
@@ -81,7 +83,7 @@ fun CaptureImageScreen(
                     permissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             }) {
-                Text("Take Picture")
+                Text(stringResource(R.string.take_picture))
             }
         }
 
@@ -90,11 +92,11 @@ fun CaptureImageScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = {
                 imageUri?.let { uri ->
-                    viewModel.analyzeImage(bmp, uri)
+                    viewModel.analyzeImage(uri)
                     navController.navigate("dashboard")
                 }
             }) {
-                Text("Analyze")
+                Text(stringResource(R.string.analyze))
             }
         }
     }

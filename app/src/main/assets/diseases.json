@@ -1,0 +1,265 @@
+[
+  {
+    "name": "Early Blight",
+    "description": "Fungal disease causing dark spots with concentric rings on leaves",
+    "symptoms": "Brown spots with target-like rings, yellowing leaves",
+    "severity": "MEDIUM",
+    "imageUrl": "file:///android_asset/images/early_blight.jpeg",
+    "detailedSymptoms": [
+      "Dark brown spots with concentric rings (target-like appearance)",
+      "Yellowing of leaves starting from bottom of plant",
+      "Spots may have yellow halos around them",
+      "Leaves eventually turn brown and drop off",
+      "Stems and fruit can also be affected"
+    ],
+    "causes": [
+      "Alternaria solani fungus",
+      "High humidity and warm temperatures",
+      "Poor air circulation",
+      "Overhead watering",
+      "Plant stress from drought or nutrient deficiency"
+    ],
+    "prevention": [
+      "Ensure good air circulation around plants",
+      "Water at soil level, avoid wetting leaves",
+      "Apply mulch to prevent soil splash",
+      "Rotate crops annually",
+      "Remove infected plant debris"
+    ],
+    "treatment": [
+      "Apply copper-based fungicides",
+      "Use organic neem oil treatments",
+      "Remove affected leaves immediately",
+      "Improve air circulation",
+      "Reduce watering frequency"
+    ],
+    "progressionStages": [
+      "Small dark spots appear on lower leaves",
+      "Spots develop concentric rings",
+      "Yellowing spreads around spots",
+      "Leaves turn brown and drop",
+      "Disease moves up the plant"
+    ],
+    "optimalConditions": "Maintain humidity below 85%, ensure good air circulation, and water at soil level to prevent this disease."
+  },
+  {
+    "name": "Late Blight",
+    "description": "Serious fungal disease that can destroy entire crops rapidly",
+    "symptoms": "Water-soaked spots, white fuzzy growth, rapid leaf death",
+    "severity": "CRITICAL",
+    "imageUrl": "file:///android_asset/images/late_blight.jpeg",
+    "detailedSymptoms": [
+      "Water-soaked lesions on leaves and stems",
+      "White fuzzy growth on undersides of leaves",
+      "Rapid browning and death of affected tissue",
+      "Dark brown to black lesions on fruit",
+      "Entire plants can die within days"
+    ],
+    "causes": [
+      "Phytophthora infestans pathogen",
+      "Cool, wet weather conditions",
+      "High humidity (above 90%)",
+      "Temperature range of 60-70°F",
+      "Poor air circulation"
+    ],
+    "prevention": [
+      "Choose resistant varieties",
+      "Ensure excellent drainage",
+      "Provide good air circulation",
+      "Avoid overhead watering",
+      "Apply preventive fungicides in wet weather"
+    ],
+    "treatment": [
+      "Remove infected plants immediately",
+      "Apply copper-based fungicides",
+      "Improve air circulation",
+      "Reduce humidity around plants",
+      "Consider destroying severely affected plants"
+    ],
+    "progressionStages": [
+      "Water-soaked spots appear on leaves",
+      "White fuzzy growth develops",
+      "Lesions turn brown and expand rapidly",
+      "Stems and fruit become infected",
+      "Plant death can occur within 1-2 weeks"
+    ],
+    "optimalConditions": "Keep humidity below 90%, ensure excellent drainage, and provide good air circulation to prevent this devastating disease."
+  },
+  {
+    "name": "Bacterial Spot",
+    "description": "Bacterial infection causing small dark spots on leaves and fruit",
+    "symptoms": "Small dark spots with yellow halos, leaf drop",
+    "severity": "MEDIUM",
+    "imageUrl": "file:///android_asset/images/bacterial_spot.jpeg",
+    "detailedSymptoms": [
+      "Small, dark brown to black spots on leaves",
+      "Yellow halos around spots",
+      "Spots may have raised or sunken centers",
+      "Leaf yellowing and premature drop",
+      "Fruit develops small, raised, dark spots"
+    ],
+    "causes": [
+      "Xanthomonas bacteria species",
+      "Warm, humid weather conditions",
+      "Overhead watering and rain splash",
+      "Wounds from insects or pruning",
+      "Contaminated seeds or transplants"
+    ],
+    "prevention": [
+      "Use certified disease-free seeds",
+      "Avoid overhead watering",
+      "Provide good air circulation",
+      "Disinfect tools between plants",
+      "Remove infected plant debris"
+    ],
+    "treatment": [
+      "Apply copper-based bactericides",
+      "Remove infected leaves and fruit",
+      "Improve air circulation",
+      "Avoid working with wet plants",
+      "Use drip irrigation instead of sprinklers"
+    ],
+    "progressionStages": [
+      "Small water-soaked spots appear",
+      "Spots turn dark brown to black",
+      "Yellow halos develop around spots",
+      "Leaves yellow and drop prematurely",
+      "Fruit develops characteristic scab-like spots"
+    ],
+    "optimalConditions": "Maintain good air circulation, avoid overhead watering, and keep humidity levels moderate to prevent bacterial infections."
+  },
+  {
+    "name": "Mosaic Virus",
+    "description": "Viral disease causing mottled yellow and green patterns",
+    "symptoms": "Mottled coloring, stunted growth, distorted leaves",
+    "severity": "HIGH",
+    "imageUrl": "file:///android_asset/images/mosaic_virus.jpeg",
+    "detailedSymptoms": [
+      "Mottled yellow and green patterns on leaves",
+      "Stunted plant growth",
+      "Distorted, curled, or puckered leaves",
+      "Reduced fruit size and yield",
+      "Mosaic patterns may appear on fruit"
+    ],
+    "causes": [
+      "Tobacco Mosaic Virus (TMV) or related viruses",
+      "Transmission through infected tools",
+      "Handling by smokers or tobacco users",
+      "Infected transplants or seeds",
+      "Mechanical transmission during cultivation"
+    ],
+    "prevention": [
+      "Use virus-free certified seeds and transplants",
+      "Disinfect tools with 10% bleach solution",
+      "Wash hands thoroughly before handling plants",
+      "Avoid smoking near tomato plants",
+      "Remove infected plants immediately"
+    ],
+    "treatment": [
+      "No cure available - remove infected plants",
+      "Disinfect all tools and equipment",
+      "Control aphids and other vectors",
+      "Plant resistant varieties",
+      "Maintain good garden hygiene"
+    ],
+    "progressionStages": [
+      "Light and dark green mottling appears",
+      "Leaf distortion becomes more pronounced",
+      "Plant growth slows significantly",
+      "Fruit development is affected",
+      "Overall plant vigor declines"
+    ],
+    "optimalConditions": "Practice strict hygiene, use certified disease-free plants, and avoid tobacco products near tomatoes to prevent viral infections."
+  },
+  {
+    "name": "Septoria Leaf Spot",
+    "description": "Fungal disease with small circular spots and dark centers",
+    "symptoms": "Small circular spots with dark centers, yellowing leaves",
+    "severity": "MEDIUM",
+    "imageUrl": "file:///android_asset/images/septoria_leaf_spot.jpeg",
+    "detailedSymptoms": [
+      "Small, circular spots with dark centers",
+      "Gray to brown spots with dark borders",
+      "Tiny black specks (fruiting bodies) in spot centers",
+      "Yellowing of leaves around spots",
+      "Lower leaves affected first, progressing upward"
+    ],
+    "causes": [
+      "Septoria lycopersici fungus",
+      "Warm, humid weather conditions",
+      "Overhead watering and rain splash",
+      "Poor air circulation",
+      "Infected plant debris in soil"
+    ],
+    "prevention": [
+      "Ensure good air circulation",
+      "Water at soil level",
+      "Apply mulch to prevent soil splash",
+      "Remove lower leaves touching ground",
+      "Clean up plant debris in fall"
+    ],
+    "treatment": [
+      "Apply fungicides containing chlorothalonil",
+      "Remove affected leaves immediately",
+      "Improve air circulation around plants",
+      "Reduce watering frequency",
+      "Apply organic copper sprays"
+    ],
+    "progressionStages": [
+      "Small spots appear on lower leaves",
+      "Spots develop dark centers with gray borders",
+      "Black fruiting bodies forms in centers",
+      "Leaves yellow and drop from bottom up",
+      "Disease progresses up the plant"
+    ],
+    "optimalConditions": "Maintain good air circulation, avoid overhead watering, and remove lower leaves to prevent this common fungal disease."
+  },
+  {
+    "name": "Fusarium Wilt",
+    "description": "Soilborne fungal disease causing wilting and vascular discoloration",
+    "symptoms": "One-sided wilting, yellowing leaves, brown vascular streaks",
+    "severity": "CRITICAL",
+    "imageUrl": "file:///android_asset/images/fusarium_wilt.jpeg",
+    "detailedSymptoms": [
+      "One-sided wilting of leaves or branches",
+      "Lower leaves turn yellow first",
+      "Brown streaks in vascular tissue",
+      "Stunted plant growth",
+      "Few or no fruit development",
+      "Permanent wilting regardless of watering"
+    ],
+    "causes": [
+      "Fusarium oxysporum f. sp. lycopersici",
+      "Soilborne fungal pathogen",
+      "Warm soil temperatures",
+      "Acidic soil pH (5.0-5.5)",
+      "High humidity conditions",
+      "Contaminated soil or tools"
+    ],
+    "prevention": [
+      "Plant resistant varieties",
+      "Use grafted tomatoes",
+      "Rotate crops for 3-5 years",
+      "Maintain neutral soil pH (6.5-7.0)",
+      "Use sterile potting media",
+      "Clean equipment between fields"
+    ],
+    "treatment": [
+      "No cure once established",
+      "Remove and destroy infected plants",
+      "Soil fumigation (conventional)",
+      "Use resistant rootstocks",
+      "Improve soil drainage",
+      "Apply preventive fungicides"
+    ],
+    "progressionStages": [
+      "One-sided wilting appears",
+      "Lower leaves turn yellow",
+      "Vascular browning visible",
+      "Wilting becomes permanent",
+      "Progressive defoliation",
+      "Plant death"
+    ],
+    "optimalConditions": "Cool, well-drained soil with neutral pH and good air circulation"
+  }
+]

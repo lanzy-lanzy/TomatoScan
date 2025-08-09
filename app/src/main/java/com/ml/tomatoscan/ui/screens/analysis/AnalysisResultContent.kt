@@ -6,6 +6,7 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -70,15 +71,53 @@ fun AnalysisContent(
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Analyzed Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp)
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
-                    contentScale = ContentScale.Crop
-                )
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                ) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Analyzed Image",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    // Overlay affected areas if present
+                    val sr = viewModel.scanResult.collectAsState().value
+                    val strokeColor = MaterialTheme.colorScheme.error
+                    val fillColor = strokeColor.copy(alpha = 0.25f)
+                    if (!sr?.affectedAreas.isNullOrEmpty()) {
+                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                            val stroke = 2.dp.toPx()
+                            val w = size.width
+                            val h = size.height
+                            sr!!.affectedAreas.forEach { box ->
+                                // Gemini boxes are normalized 0..1000
+                                val left = (box.x1 / 1000f) * w
+                                val top = (box.y1 / 1000f) * h
+                                val right = (box.x2 / 1000f) * w
+                                val bottom = (box.y2 / 1000f) * h
+                                val safeLeft = left.coerceIn(0f, w)
+                                val safeTop = top.coerceIn(0f, h)
+                                val safeRight = right.coerceIn(0f, w)
+                                val safeBottom = bottom.coerceIn(0f, h)
+                                val rectW = (safeRight - safeLeft).coerceAtLeast(0f)
+                                val rectH = (safeBottom - safeTop).coerceAtLeast(0f)
+                                drawRect(
+                                    color = fillColor,
+                                    topLeft = androidx.compose.ui.geometry.Offset(safeLeft, safeTop),
+                                    size = androidx.compose.ui.geometry.Size(rectW, rectH)
+                                )
+                                drawRect(
+                                    color = strokeColor,
+                                    topLeft = androidx.compose.ui.geometry.Offset(safeLeft, safeTop),
+                                    size = androidx.compose.ui.geometry.Size(rectW, rectH),
+                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke)
+                                )
+                            }
+                        }
+                    }
+                }
                 ScanResultDetails(viewModel.scanResult.collectAsState().value)
             }
         }
@@ -104,14 +143,33 @@ fun ScanResultDetails(scanResult: ScanResult?) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // --- Enhanced Disease Header ---
+        val isNotTomato = scanResult?.diseaseDetected == "Not Tomato"
+        val severityColor = when {
+            isNotTomato -> Color(0xFF757575) // Gray for "not tomato"
+            (scanResult?.severity ?: "").lowercase() == "healthy" -> Color(0xFF2E7D32)
+            (scanResult?.severity ?: "").lowercase() == "mild" -> Color(0xFFFBC02D)
+            (scanResult?.severity ?: "").lowercase() == "moderate" -> Color(0xFFF57C00)
+            (scanResult?.severity ?: "").lowercase() == "severe" -> Color(0xFFD32F2F)
+            else -> MaterialTheme.colorScheme.primary
+        }
+
+        val displayText = when {
+            isNotTomato -> "Not a Tomato Leaf"
+            else -> scanResult?.diseaseDetected?.takeIf { it.isNotBlank() } ?: "Healthy"
+        }
+
         Text(
-            text = scanResult?.diseaseDetected?.takeIf { it.isNotBlank() } ?: "Healthy",
+            text = displayText,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFFD32F2F), // Tomato Red
+            color = severityColor,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(12.dp))
+
+        // Only show severity for tomato images
+        if (!isNotTomato) {
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         // --- Accurate Confidence Calculation ---
         val rawConfidence = scanResult?.confidence ?: 0f
@@ -122,6 +180,7 @@ fun ScanResultDetails(scanResult: ScanResult?) {
 
         // --- Confidence Color Coding ---
         val (confidenceColor, confidenceLabel, confidenceIcon) = when {
+            isNotTomato -> Triple(Color(0xFF388E3C), "Not a Tomato Leaf", "\u274C") // Red X for not tomato
             displayConfidence >= 80 -> Triple(Color(0xFF388E3C), "High Reliability", "\uD83C\uDF45") // Tomato
             displayConfidence >= 50 -> Triple(Color(0xFFFFA000), "Medium Reliability", "\uD83D\uDD36") // Orange
             else -> Triple(Color(0xFFD32F2F), "Low Reliability", "\u26A0\uFE0F") // Red, Warning
@@ -141,7 +200,7 @@ fun ScanResultDetails(scanResult: ScanResult?) {
                 Text(confidenceIcon, fontSize = MaterialTheme.typography.titleLarge.fontSize)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Confidence: $displayConfidence%",
+                    text = if (isNotTomato) "Confidence: $displayConfidence%" else "Confidence: $displayConfidence%",
                     style = MaterialTheme.typography.titleLarge,
                     color = confidenceColor,
                     fontWeight = FontWeight.Bold
@@ -191,36 +250,75 @@ fun ScanResultDetails(scanResult: ScanResult?) {
         )
         Spacer(modifier = Modifier.height(22.dp))
         // --- Tomato Gradient Divider ---
-        androidx.compose.material3.Divider(
+        HorizontalDivider(
             color = Color(0xFFD32F2F).copy(alpha = 0.35f),
             thickness = 2.dp,
             modifier = Modifier.padding(vertical = 6.dp, horizontal = 32.dp)
         )
-        if (!scanResult?.recommendations.isNullOrEmpty()) {
-            ResultSectionCard(
-                icon = "\uD83D\uDCA1", // Lightbulb
-                title = "Recommendations",
-                items = scanResult!!.recommendations,
-                cardColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-        if (!scanResult?.treatmentOptions.isNullOrEmpty()) {
-            ResultSectionCard(
-                icon = "\uD83D\uDC89", // Syringe
-                title = "Treatment Options",
-                items = scanResult!!.treatmentOptions,
-                cardColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-        if (!scanResult?.preventionMeasures.isNullOrEmpty()) {
-            ResultSectionCard(
-                icon = "\uD83D\uDEE1\uFE0F", // Shield
-                title = "Prevention Measures",
-                items = scanResult!!.preventionMeasures,
-                cardColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+        // Skip recommendations if not a tomato
+        if (scanResult?.diseaseDetected != "Not Tomato") {
+            // Grouped recommendations by urgency if available
+            val hasGrouped = !scanResult?.recommendationsImmediate.isNullOrEmpty() ||
+                    !scanResult?.recommendationsShortTerm.isNullOrEmpty() ||
+                    !scanResult?.recommendationsLongTerm.isNullOrEmpty()
+            if (hasGrouped) {
+                if (!scanResult?.recommendationsImmediate.isNullOrEmpty()) {
+                    ResultSectionCard(
+                        icon = "\u23F1\uFE0F", // timer
+                        title = "Immediate Actions",
+                        items = scanResult!!.recommendationsImmediate,
+                        cardColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                if (!scanResult?.recommendationsShortTerm.isNullOrEmpty()) {
+                    ResultSectionCard(
+                        icon = "\uD83D\uDCCA", // chart
+                        title = "Short-term",
+                        items = scanResult!!.recommendationsShortTerm,
+                        cardColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                if (!scanResult?.recommendationsLongTerm.isNullOrEmpty()) {
+                    ResultSectionCard(
+                        icon = "\uD83C\uDF31", // seedling
+                        title = "Long-term Prevention",
+                        items = scanResult!!.recommendationsLongTerm,
+                        cardColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            } else {
+                if (!scanResult?.recommendations.isNullOrEmpty()) {
+                    ResultSectionCard(
+                        icon = "\uD83D\uDCA1", // Lightbulb
+                        title = "Recommendations",
+                        items = scanResult!!.recommendations,
+                        cardColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+
+            // Always show treatment options and prevention measures when available
+            if (!scanResult?.treatmentOptions.isNullOrEmpty()) {
+                ResultSectionCard(
+                    icon = "\uD83D\uDC89", // Syringe
+                    title = "Treatment Options",
+                    items = scanResult!!.treatmentOptions,
+                    cardColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            if (!scanResult?.preventionMeasures.isNullOrEmpty()) {
+                ResultSectionCard(
+                    icon = "\uD83D\uDEE1\uFE0F", // Shield
+                    title = "Prevention Measures",
+                    items = scanResult!!.preventionMeasures,
+                    cardColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            }
         }
     }
 }
