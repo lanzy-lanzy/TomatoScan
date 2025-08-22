@@ -375,14 +375,20 @@ data class TomatoDisease(
     val description: String,
     val symptoms: String,
     val severity: DiseaseSeverity,
-    val imageUrl: String,
+    val imageUrl: String, // Local asset URL
+    val onlineImageUrl: String? = null, // HD online image URL
     val detailedSymptoms: List<String>,
     val causes: List<String>,
     val prevention: List<String>,
     val treatment: List<String>,
     val progressionStages: List<String>,
     val optimalConditions: String
-)
+) {
+    /**
+     * Get the image URL (always local asset now)
+     */
+    fun getImageUrl(context: android.content.Context): String = imageUrl
+}
 
 enum class DiseaseSeverity {
     LOW, MEDIUM, HIGH, CRITICAL
@@ -524,12 +530,18 @@ fun DiseaseCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = disease.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = disease.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+
+                    }
 
                     // Severity badge
                     Surface(
@@ -730,10 +742,13 @@ fun DiseaseDetailDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Disease image
+
+
+                // Disease image - high quality local asset
+                val context = LocalContext.current
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(disease.imageUrl)
+                    model = ImageRequest.Builder(context)
+                        .data(disease.getImageUrl(context))
                         .crossfade(true)
                         .build(),
                     contentDescription = "${disease.name} affected leaf",

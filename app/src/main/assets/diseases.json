@@ -4,7 +4,8 @@
     "description": "Fungal disease causing dark spots with concentric rings on leaves",
     "symptoms": "Brown spots with target-like rings, yellowing leaves",
     "severity": "MEDIUM",
-    "imageUrl": "file:///android_asset/images/early_blight.jpeg",
+    "imageUrl": "file:///android_asset/images/early_blight_hd.jpg",
+    "onlineImageUrl": null,
     "detailedSymptoms": [
       "Dark brown spots with concentric rings (target-like appearance)",
       "Yellowing of leaves starting from bottom of plant",
@@ -47,7 +48,8 @@
     "description": "Serious fungal disease that can destroy entire crops rapidly",
     "symptoms": "Water-soaked spots, white fuzzy growth, rapid leaf death",
     "severity": "CRITICAL",
-    "imageUrl": "file:///android_asset/images/late_blight.jpeg",
+    "imageUrl": "file:///android_asset/images/late_blight_hd.jpg",
+    "onlineImageUrl": null,
     "detailedSymptoms": [
       "Water-soaked lesions on leaves and stems",
       "White fuzzy growth on undersides of leaves",
@@ -90,7 +92,8 @@
     "description": "Bacterial infection causing small dark spots on leaves and fruit",
     "symptoms": "Small dark spots with yellow halos, leaf drop",
     "severity": "MEDIUM",
-    "imageUrl": "file:///android_asset/images/bacterial_spot.jpeg",
+    "imageUrl": "file:///android_asset/images/bacterial_spot_hd.jpg",
+    "onlineImageUrl": null,
     "detailedSymptoms": [
       "Small, dark brown to black spots on leaves",
       "Yellow halos around spots",
@@ -133,7 +136,8 @@
     "description": "Viral disease causing mottled yellow and green patterns",
     "symptoms": "Mottled coloring, stunted growth, distorted leaves",
     "severity": "HIGH",
-    "imageUrl": "file:///android_asset/images/mosaic_virus.jpeg",
+    "imageUrl": "file:///android_asset/images/mosaic_virus_hd.jpg",
+    "onlineImageUrl": null,
     "detailedSymptoms": [
       "Mottled yellow and green patterns on leaves",
       "Stunted plant growth",
@@ -176,7 +180,8 @@
     "description": "Fungal disease with small circular spots and dark centers",
     "symptoms": "Small circular spots with dark centers, yellowing leaves",
     "severity": "MEDIUM",
-    "imageUrl": "file:///android_asset/images/septoria_leaf_spot.jpeg",
+    "imageUrl": "file:///android_asset/images/septoria_leaf_spot_hd.jpg",
+    "onlineImageUrl": null,
     "detailedSymptoms": [
       "Small, circular spots with dark centers",
       "Gray to brown spots with dark borders",
@@ -219,7 +224,8 @@
     "description": "Soilborne fungal disease causing wilting and vascular discoloration",
     "symptoms": "One-sided wilting, yellowing leaves, brown vascular streaks",
     "severity": "CRITICAL",
-    "imageUrl": "file:///android_asset/images/fusarium_wilt.jpeg",
+    "imageUrl": "file:///android_asset/images/fusarium_wilt_hd.jpg",
+    "onlineImageUrl": null,
     "detailedSymptoms": [
       "One-sided wilting of leaves or branches",
       "Lower leaves turn yellow first",
