@@ -53,4 +53,41 @@
 
     <!-- Name Dialog -->
     <string name="dialog_change_name_title">Palitan ang Iyong Pangalan</string>
+    <!-- History / Results -->
+    <string name="history_title">Kasaysayan ng Pagsusuri</string>
+    <string name="history_clear_all">Burahin Lahat</string>
+    <string name="history_new_scan">Bagong Suri</string>
+    <string name="history_loading">Ikinakarga ang kasaysayan...</string>
+    <string name="history_empty_title">Walang Kasaysayan ng Pagsusuri</string>
+    <string name="history_empty_desc">Magsimulang suriin ang mga dahon ng kamatis upang makita ang kasaysayan dito.</string>
+    <string name="history_start_first_scan">Simulan ang Unang Suri</string>
+    <string name="history_recent_scans_count">Mga Kamakailang Suri (%1$d)</string>
+    <string name="history_image_cd">Nasuring dahon ng kamatis</string>
+    <string name="history_delete">Burahin</string>
+    <string name="history_details_title">Mga Detalye ng Pagsusuri</string>
+    <string name="label_disease">Sakit</string>
+    <string name="label_severity">Tindi</string>
+    <string name="label_quality">Kalidad</string>
+    <string name="label_confidence">Kumpiyansa</string>
+    <string name="label_date">Petsa</string>
+    <string name="label_description">Paglalarawan:</string>
+    <string name="label_recommendations">Mga Rekomendasyon</string>
+    <string name="label_treatment_options">Mga Paraan ng Paggamot</string>
+    <string name="label_prevention_measures">Mga Paraan ng Pag-iwas</string>
+    <string name="common_close_btn">Isara</string>
+    <string name="dialog_delete_title">Burahin ang Pagsusuri</string>
+    <string name="dialog_delete_message">Sigurado ka bang gusto mong burahin ang pagsusuring ito? Hindi na ito maibabalik.</string>
+    <string name="dialog_clear_all_title">Burahin ang Lahat ng Kasaysayan</string>
+    <string name="dialog_clear_all_message">Sigurado ka bang gusto mong burahin ang lahat ng kasaysayan ng pagsusuri? Hindi na ito maibabalik.</string>
+    <string name="action_clear_all">Burahin Lahat</string>
+
+    <!-- Analysis screen strings -->
+    <string name="analyze_another">Magsuri Pa ng Isang Kamatis</string>
+    <string name="analyzed_image_cd">Nasuring Larawan</string>
+    <string name="healthy_text">Malusog</string>
+    <string name="confidence_format">Kumpiyansa: %1$d%%</string>
+    <string name="reliability_high">Mataas na Pagkakatiwala</string>
+    <string name="reliability_medium">Katamtamang Pagkakatiwala</string>
+    <string name="reliability_low">Mababang Pagkakatiwala</string>
+    <string name="low_confidence_warning">Mababang kumpiyansa: Mangyaring kumuha muli o mag-upload ng mas malinaw na larawan para sa mas maaasahang resulta.</string>
 </resources>

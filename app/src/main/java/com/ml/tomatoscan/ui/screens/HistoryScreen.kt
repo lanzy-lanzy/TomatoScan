@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -64,7 +65,7 @@ fun HistoryScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Analysis History",
+                        stringResource(id = com.ml.tomatoscan.R.string.history_title),
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -73,7 +74,7 @@ fun HistoryScreen(
                         IconButton(onClick = { showClearAllDialog = true }) {
                             Icon(
                                 Icons.Default.DeleteSweep,
-                                contentDescription = "Clear All",
+                                contentDescription = stringResource(id = com.ml.tomatoscan.R.string.history_clear_all),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -95,7 +96,7 @@ fun HistoryScreen(
             ) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("New Scan")
+                Text(stringResource(id = com.ml.tomatoscan.R.string.history_new_scan))
             }
         }
     ) { innerPadding ->
@@ -173,7 +174,7 @@ fun LoadingHistoryIndicator() {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "Loading history...",
+                stringResource(id = com.ml.tomatoscan.R.string.history_loading),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -208,7 +209,7 @@ fun EmptyHistoryState(onStartScan: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    "No Analysis History",
+                    stringResource(id = com.ml.tomatoscan.R.string.history_empty_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -217,7 +218,7 @@ fun EmptyHistoryState(onStartScan: () -> Unit) {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    "Start analyzing tomato leaves to see your history here.",
+                    stringResource(id = com.ml.tomatoscan.R.string.history_empty_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -231,7 +232,7 @@ fun EmptyHistoryState(onStartScan: () -> Unit) {
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Start Your First Scan")
+                    Text(stringResource(id = com.ml.tomatoscan.R.string.history_start_first_scan))
                 }
             }
         }
@@ -252,7 +253,7 @@ fun HistoryContent(
     ) {
         item {
             Text(
-                "Recent Scans (${scanHistory.size})",
+                stringResource(id = com.ml.tomatoscan.R.string.history_recent_scans_count, scanHistory.size),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -315,7 +316,7 @@ fun HistoryItem(
                     .crossfade(true)
                     .build(),
                 imageLoader = imageLoader,
-                contentDescription = "Scanned tomato leaf",
+                contentDescription = stringResource(id = com.ml.tomatoscan.R.string.history_image_cd),
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(8.dp))
@@ -386,7 +387,7 @@ fun HistoryItem(
                 IconButton(onClick = onDeleteClick) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = stringResource(id = com.ml.tomatoscan.R.string.history_delete),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -424,9 +425,9 @@ fun ScanResultDetailDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "Analysis Details",
-                fontWeight = FontWeight.Bold
-            )
+                    stringResource(id = com.ml.tomatoscan.R.string.history_details_title),
+                    fontWeight = FontWeight.Bold
+                )
         },
         text = {
             LazyColumn(
@@ -462,18 +463,18 @@ fun ScanResultDetailDialog(
                             modifier = Modifier.padding(16.dp)
                         ) {
                             if (scanResult.diseaseDetected.isNotEmpty() && scanResult.diseaseDetected != "Unknown") {
-                                DetailRow("Disease", scanResult.diseaseDetected)
-                                DetailRow("Severity", scanResult.severity)
+                                DetailRow(stringResource(id = com.ml.tomatoscan.R.string.label_disease), scanResult.diseaseDetected)
+                                DetailRow(stringResource(id = com.ml.tomatoscan.R.string.label_severity), scanResult.severity)
                             } else {
-                                DetailRow("Quality", scanResult.quality)
+                                DetailRow(stringResource(id = com.ml.tomatoscan.R.string.label_quality), scanResult.quality)
                             }
-                            DetailRow("Confidence", "${String.format("%.1f", scanResult.confidence)}%")
-                            DetailRow("Date", dateFormat.format(scanResult.timestamp))
+                            DetailRow(stringResource(id = com.ml.tomatoscan.R.string.label_confidence), "${String.format("%.1f", scanResult.confidence)}%")
+                            DetailRow(stringResource(id = com.ml.tomatoscan.R.string.label_date), dateFormat.format(scanResult.timestamp))
                             
                             if (scanResult.description.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    "Description:",
+                                    stringResource(id = com.ml.tomatoscan.R.string.label_description),
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -490,28 +491,28 @@ fun ScanResultDetailDialog(
                 // Recommendations
                 if (scanResult.recommendations.isNotEmpty()) {
                     item {
-                        DetailSection("Recommendations", scanResult.recommendations, Icons.Default.Lightbulb)
+                        DetailSection(stringResource(id = com.ml.tomatoscan.R.string.label_recommendations), scanResult.recommendations, Icons.Default.Lightbulb)
                     }
                 }
                 
                 // Treatment Options
                 if (scanResult.treatmentOptions.isNotEmpty()) {
                     item {
-                        DetailSection("Treatment Options", scanResult.treatmentOptions, Icons.Default.LocalHospital)
+                        DetailSection(stringResource(id = com.ml.tomatoscan.R.string.label_treatment_options), scanResult.treatmentOptions, Icons.Default.LocalHospital)
                     }
                 }
                 
                 // Prevention Measures
                 if (scanResult.preventionMeasures.isNotEmpty()) {
                     item {
-                        DetailSection("Prevention Measures", scanResult.preventionMeasures, Icons.Default.Shield)
+                        DetailSection(stringResource(id = com.ml.tomatoscan.R.string.label_prevention_measures), scanResult.preventionMeasures, Icons.Default.Shield)
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(id = com.ml.tomatoscan.R.string.common_close_btn))
             }
         }
     )
@@ -594,10 +595,10 @@ fun DeleteConfirmationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Delete Analysis")
+            Text(stringResource(id = com.ml.tomatoscan.R.string.dialog_delete_title))
         },
         text = {
-            Text("Are you sure you want to delete this analysis? This action cannot be undone.")
+            Text(stringResource(id = com.ml.tomatoscan.R.string.dialog_delete_message))
         },
         confirmButton = {
             TextButton(
@@ -606,7 +607,7 @@ fun DeleteConfirmationDialog(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Delete")
+                Text(stringResource(id = com.ml.tomatoscan.R.string.history_delete))
             }
         },
         dismissButton = {

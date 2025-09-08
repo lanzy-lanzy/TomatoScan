@@ -53,4 +53,41 @@
 
     <!-- Name Dialog -->
     <string name="dialog_change_name_title">Usba ang Imong Ngalan</string>
+    <!-- History / Results -->
+    <string name="history_title">Kasaysayan sa Pagsusi</string>
+    <string name="history_clear_all">Hawaa Tanan</string>
+    <string name="history_new_scan">Bag-ong Scan</string>
+    <string name="history_loading">Gikarga ang kasaysayan...</string>
+    <string name="history_empty_title">Walay Kasaysayan sa Pagsusi</string>
+    <string name="history_empty_desc">Sugdi ang pagsusi sa dahon sa kamatis aron makita ang kasaysayan diri.</string>
+    <string name="history_start_first_scan">Sugdi ang Unang Scan</string>
+    <string name="history_recent_scans_count">Bag-ong mga Scan (%1$d)</string>
+    <string name="history_image_cd">Gi-scan nga dahon sa kamatis</string>
+    <string name="history_delete">Papha</string>
+    <string name="history_details_title">Detalye sa Pagsusi</string>
+    <string name="label_disease">Sakit</string>
+    <string name="label_severity">Kagrabe</string>
+    <string name="label_quality">Kalidad</string>
+    <string name="label_confidence">Kompiyansa</string>
+    <string name="label_date">Petsa</string>
+    <string name="label_description">Deskripsyon:</string>
+    <string name="label_recommendations">Mga Rekomendasyon</string>
+    <string name="label_treatment_options">Mga Pamaagi sa Tambal</string>
+    <string name="label_prevention_measures">Mga Pamaagi sa Paglikay</string>
+    <string name="common_close_btn">Sirad</string>
+    <string name="dialog_delete_title">Papha ang Pagsusi</string>
+    <string name="dialog_delete_message">Sigurado ka nga paphaon ni nga pagsusi? Dili na kini ma-undo.</string>
+    <string name="dialog_clear_all_title">Hawaa ang Tanan nga Kasaysayan</string>
+    <string name="dialog_clear_all_message">Sigurado ka nga hawaa ang tanang kasaysayan sa pagsusi? Dili na kini ma-undo.</string>
+    <string name="action_clear_all">Hawaa Tanan</string>
+
+    <!-- Analysis screen strings -->
+    <string name="analyze_another">Susi pa og laing Kamatis</string>
+    <string name="analyzed_image_cd">Gisusi nga Hulagway</string>
+    <string name="healthy_text">Himsog</string>
+    <string name="confidence_format">Kompiyansa: %1$d%%</string>
+    <string name="reliability_high">Taas nga Kasaligan</string>
+    <string name="reliability_medium">Tunga-tungang Kasaligan</string>
+    <string name="reliability_low">Ubos nga Kasaligan</string>
+    <string name="low_confidence_warning">Ubos ang kompiyansa: Palihug usba ang kuha o mag-upload og mas klaro nga hulagway para mas masaligan ang resulta.</string>
 </resources>
