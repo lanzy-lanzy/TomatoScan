@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">TomatoScan</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Balay</string>
+    <string name="nav_scan">Scan</string>
+    <string name="nav_history">Kasaysayan</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_analytics">Analytics</string>
+
+    <!-- Common -->
+    <string name="common_back">Balik</string>
+    <string name="common_close">Sirad</string>
+    <string name="common_save">I-save</string>
+    <string name="common_cancel">Kanselahon</string>
+    <string name="common_name">Ngalan</string>
+    <string name="common_version">Bersyon %1$s</string>
+    <string name="system_default">System Default</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_change_name">Usba ang Ngalan</string>
+    <string name="settings_current_name">Karon nga ngalan: %1$s</string>
+
+    <string name="settings_section_application">Aplikasyon</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_language">Pinulongan</string>
+
+    <string name="settings_section_data_privacy">Datos ug Privacy</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_privacy_policy_sub">Tan-awa ang among privacy policy</string>
+    <string name="settings_clear_data">Hawaa ang Datos</string>
+    <string name="settings_clear_data_sub">Kuhaa ang tanang lokal nga datos</string>
+
+    <string name="settings_section_about">Mahitungod</string>
+    <string name="settings_about_title">Mahitungod sa TomatoScan</string>
+    <string name="settings_about_app_desc">Usa ka AI-powered nga app aron makatabang sa pag-ila sa sakit sa dahon sa kamatis ug paghatag og tambag sa pagtambal.</string>
+    <string name="settings_about_powered_by">Giapasundayag sa Google Gemini AI</string>
+
+    <!-- Theme Dialog -->
+    <string name="dialog_theme_title">Pili og Tema</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Hayag</string>
+    <string name="theme_dark">Ngitngit</string>
+
+    <!-- Language Dialog -->
+    <string name="dialog_language_title">Pili og Pinulongan</string>
+    <string name="language_system">System</string>
+    <string name="language_en">English</string>
+    <string name="language_fil">Filipino</string>
+    <string name="language_ceb">Bisaya</string>
+
+    <!-- Name Dialog -->
+    <string name="dialog_change_name_title">Usba ang Imong Ngalan</string>
+</resources>

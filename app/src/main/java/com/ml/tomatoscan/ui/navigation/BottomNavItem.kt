@@ -10,11 +10,11 @@ sealed class BottomNavItem(
     val route: String,
     val icon: ImageVector? = null,
     @DrawableRes val drawableRes: Int? = null,
-    val title: String
+    @androidx.annotation.StringRes val titleRes: Int
 ) {
-    object Dashboard : BottomNavItem("dashboard", Icons.Rounded.Home, null, "Home")
-    object Analysis : BottomNavItem("analysis", null, R.drawable.scan_icon, "Scan")
-    object History : BottomNavItem("history", Icons.Rounded.History, null, "History")
-    object Settings : BottomNavItem("settings", Icons.Rounded.Settings, null, "Settings")
-    object Analytics : BottomNavItem("analytics", Icons.Rounded.Analytics, null, "Analytics")
+    object Dashboard : BottomNavItem("dashboard", Icons.Rounded.Home, null, R.string.nav_home)
+    object Analysis : BottomNavItem("analysis", null, R.drawable.scan_icon, R.string.nav_scan)
+    object History : BottomNavItem("history", Icons.Rounded.History, null, R.string.nav_history)
+    object Settings : BottomNavItem("settings", Icons.Rounded.Settings, null, R.string.nav_settings)
+    object Analytics : BottomNavItem("analytics", Icons.Rounded.Analytics, null, R.string.nav_analytics)
 }

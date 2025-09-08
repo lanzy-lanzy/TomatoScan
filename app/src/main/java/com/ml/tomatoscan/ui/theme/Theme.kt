@@ -60,11 +60,12 @@ fun TomatoScanTheme(
         SideEffect {
             val window = (view.context as Activity).window
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            window.statusBarColor = colorScheme.primary.toArgb()
-            // Use primary color to match status bar for consistent visual framing
-            window.navigationBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
+            // Sync system bars with app theme colors (use surface for translucency harmony)
+            window.statusBarColor = colorScheme.surface.toArgb()
+            window.navigationBarColor = colorScheme.surface.toArgb()
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = !darkTheme
+            controller.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

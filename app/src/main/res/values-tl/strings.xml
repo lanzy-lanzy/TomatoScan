@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">TomatoScan</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Bahay</string>
+    <string name="nav_scan">Suriin</string>
+    <string name="nav_history">Kasaysayan</string>
+    <string name="nav_settings">Mga Setting</string>
+    <string name="nav_analytics">Analytics</string>
+
+    <!-- Common -->
+    <string name="common_back">Bumalik</string>
+    <string name="common_close">Isara</string>
+    <string name="common_save">I-save</string>
+    <string name="common_cancel">Kanselahin</string>
+    <string name="common_name">Pangalan</string>
+    <string name="common_version">Bersyon %1$s</string>
+    <string name="system_default">Default ng System</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Mga Setting</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_change_name">Palitan ang Pangalan</string>
+    <string name="settings_current_name">Kasalukuyang pangalan: %1$s</string>
+
+    <string name="settings_section_application">Aplikasyon</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_language">Wika</string>
+
+    <string name="settings_section_data_privacy">Datos at Privacy</string>
+    <string name="settings_privacy_policy">Patakaran sa Privacy</string>
+    <string name="settings_privacy_policy_sub">Tingnan ang aming patakaran sa privacy</string>
+    <string name="settings_clear_data">Burahin ang Datos</string>
+    <string name="settings_clear_data_sub">Alisin ang lahat ng lokal na datos</string>
+
+    <string name="settings_section_about">Tungkol</string>
+    <string name="settings_about_title">Tungkol sa TomatoScan</string>
+    <string name="settings_about_app_desc">Isang AI-powered na app upang makatulong tukuyin ang mga sakit sa dahon ng kamatis at magbigay ng payo sa paggamot.</string>
+    <string name="settings_about_powered_by">Pinapagana ng Google Gemini AI</string>
+
+    <!-- Theme Dialog -->
+    <string name="dialog_theme_title">Pumili ng Tema</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Maliwanag</string>
+    <string name="theme_dark">Madilim</string>
+
+    <!-- Language Dialog -->
+    <string name="dialog_language_title">Pumili ng Wika</string>
+    <string name="language_system">System</string>
+    <string name="language_en">English</string>
+    <string name="language_fil">Filipino</string>
+    <string name="language_ceb">Bisaya</string>
+
+    <!-- Name Dialog -->
+    <string name="dialog_change_name_title">Palitan ang Iyong Pangalan</string>
+</resources>

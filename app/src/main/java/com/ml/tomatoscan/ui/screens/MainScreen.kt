@@ -31,6 +31,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -107,13 +108,13 @@ fun BottomBar(navController: NavController, viewModel: TomatoScanViewModel) {
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
                         )
                     )
                 ),
             containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+            contentColor = MaterialTheme.colorScheme.onSurface
         ) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
@@ -141,6 +142,23 @@ fun BottomBar(navController: NavController, viewModel: TomatoScanViewModel) {
                 )
             }
         }
+
+        // Subtle top highlight for a glass-like edge
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(8.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
 
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
@@ -193,14 +211,14 @@ fun BottomBar(navController: NavController, viewModel: TomatoScanViewModel) {
             if (BottomNavItem.Analysis.icon != null) {
                 Icon(
                     imageVector = BottomNavItem.Analysis.icon,
-                    contentDescription = BottomNavItem.Analysis.title,
+                    contentDescription = stringResource(id = BottomNavItem.Analysis.titleRes),
                     tint = Color.White,
                     modifier = Modifier.size(38.dp)
                 )
             } else if (BottomNavItem.Analysis.drawableRes != null) {
                 Icon(
                     painter = painterResource(id = BottomNavItem.Analysis.drawableRes),
-                    contentDescription = BottomNavItem.Analysis.title,
+                    contentDescription = stringResource(id = BottomNavItem.Analysis.titleRes),
                     tint = Color.White,
                     modifier = Modifier.size(38.dp)
                 )
@@ -248,38 +266,52 @@ fun RowScope.AppNavigationBarItem(
             .offset(y = offset)
             .padding(vertical = 6.dp),
         icon = {
-            if (item.icon != null) {
-                Icon(
+            val indicatorAlpha by animateFloatAsState(
+                targetValue = if (isSelected) 1f else 0f,
+                animationSpec = tween(durationMillis = 250),
+                label = "indicator_alpha"
+            )
+            Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                        .alpha(indicatorAlpha)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+                if (item.icon != null) {
+                    Icon(
                     imageVector = item.icon,
-                    contentDescription = item.title,
+                    contentDescription = stringResource(id = item.titleRes),
                     modifier = Modifier
                         .size(iconSize)
                         .alpha(iconAlpha)
                 )
-            } else if (item.drawableRes != null) {
-                Icon(
+                } else if (item.drawableRes != null) {
+                    Icon(
                     painter = painterResource(id = item.drawableRes),
-                    contentDescription = item.title,
+                    contentDescription = stringResource(id = item.titleRes),
                     modifier = Modifier
                         .size(iconSize)
                         .alpha(iconAlpha)
                 )
+                }
             }
         },
         label = {
             Text(
-                text = item.title,
+                text = stringResource(id = item.titleRes),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 modifier = Modifier.alpha(if (isSelected) 1f else 0.85f)
             )
         },
         colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-            unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
-            unselectedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-            indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.25f)
+            selectedIconColor = MaterialTheme.colorScheme.primary,
+            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            selectedTextColor = MaterialTheme.colorScheme.primary,
+            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
         )
     )
 }

@@ -15,23 +15,49 @@ class UserViewModel(application: Application) : ViewModel() {
 
     private val sharedPreferences = application.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
+    // Keys
+    private val KEY_USER_NAME = "user_name"
+    private val KEY_USER_PICTURE = "user_profile_picture_uri"
+    private val KEY_THEME_MODE = "theme_mode" // system | light | dark
+    private val KEY_APP_LANGUAGE = "app_language" // system | en | it
+
+    // User name
     private val _userName = MutableStateFlow("Alex") // Default name
     val userName: StateFlow<String> = _userName
 
+    // Profile picture
     private val _userProfilePictureUri = MutableStateFlow<String?>(null)
     val userProfilePictureUri: StateFlow<String?> = _userProfilePictureUri
+
+    // Theme mode
+    private val _themeMode = MutableStateFlow("system")
+    val themeMode: StateFlow<String> = _themeMode
+
+    // App language
+    private val _appLanguage = MutableStateFlow("system")
+    val appLanguage: StateFlow<String> = _appLanguage
 
     init {
         loadUserName()
         loadUserProfilePictureUri()
+        loadThemeMode()
+        loadAppLanguage()
     }
 
     private fun loadUserName() {
-        _userName.value = sharedPreferences.getString("user_name", "Alex") ?: "Alex"
+        _userName.value = sharedPreferences.getString(KEY_USER_NAME, "Alex") ?: "Alex"
     }
 
     private fun loadUserProfilePictureUri() {
-        _userProfilePictureUri.value = sharedPreferences.getString("user_profile_picture_uri", null)
+        _userProfilePictureUri.value = sharedPreferences.getString(KEY_USER_PICTURE, null)
+    }
+
+    private fun loadThemeMode() {
+        _themeMode.value = sharedPreferences.getString(KEY_THEME_MODE, "system") ?: "system"
+    }
+
+    private fun loadAppLanguage() {
+        _appLanguage.value = sharedPreferences.getString(KEY_APP_LANGUAGE, "system") ?: "system"
     }
 
     fun updateUserProfilePictureUri(uri: Uri?) {
@@ -39,7 +65,7 @@ class UserViewModel(application: Application) : ViewModel() {
             val uriString = uri?.toString()
             _userProfilePictureUri.value = uriString
             with(sharedPreferences.edit()) {
-                putString("user_profile_picture_uri", uriString)
+                putString(KEY_USER_PICTURE, uriString)
                 apply()
             }
         }
@@ -49,9 +75,51 @@ class UserViewModel(application: Application) : ViewModel() {
         viewModelScope.launch {
             _userName.value = newName
             with(sharedPreferences.edit()) {
-                putString("user_name", newName)
+                putString(KEY_USER_NAME, newName)
                 apply()
             }
+        }
+    }
+
+    fun updateThemeMode(mode: String) {
+        val normalized = when (mode.lowercase()) {
+            "light", "dark" -> mode.lowercase()
+            else -> "system"
+        }
+        viewModelScope.launch {
+            _themeMode.value = normalized
+            with(sharedPreferences.edit()) {
+                putString(KEY_THEME_MODE, normalized)
+                apply()
+            }
+        }
+    }
+
+    fun updateAppLanguage(lang: String) {
+        val normalized = when (lang.lowercase()) {
+            "en", "tl", "ceb" -> lang.lowercase()
+            else -> "system"
+        }
+        viewModelScope.launch {
+            _appLanguage.value = normalized
+            with(sharedPreferences.edit()) {
+                putString(KEY_APP_LANGUAGE, normalized)
+                apply()
+            }
+        }
+    }
+
+    fun clearAllPreferences() {
+        viewModelScope.launch {
+            with(sharedPreferences.edit()) {
+                clear()
+                apply()
+            }
+            // Reset to defaults
+            _userName.value = "Alex"
+            _userProfilePictureUri.value = null
+            _themeMode.value = "system"
+            _appLanguage.value = "system"
         }
     }
 }

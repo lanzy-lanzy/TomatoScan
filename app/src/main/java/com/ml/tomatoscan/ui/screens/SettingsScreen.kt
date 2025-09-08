@@ -17,14 +17,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import android.app.Application
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.ml.tomatoscan.viewmodels.UserViewModel
 import com.ml.tomatoscan.viewmodels.UserViewModelFactory
+import com.ml.tomatoscan.data.HistoryRepository
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +40,13 @@ fun SettingsScreen(
 ) {
     var showAboutDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
     val userName by userViewModel.userName.collectAsState()
+    val themeMode by userViewModel.themeMode.collectAsState()
+    val appLanguage by userViewModel.appLanguage.collectAsState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     val backgroundGradient = Brush.verticalGradient(
         colors = listOf(
@@ -47,10 +58,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = com.ml.tomatoscan.R.string.settings_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = com.ml.tomatoscan.R.string.common_back))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -76,12 +87,12 @@ fun SettingsScreen(
             ) {
                 // Account Section
                 SettingsSection(
-                    title = "Account",
+                    title = stringResource(id = com.ml.tomatoscan.R.string.settings_section_account),
                     items = listOf(
                         SettingsItem(
                             icon = Icons.Default.Person,
-                            title = "Change Name",
-                            subtitle = "Current name: $userName",
+                            title = stringResource(id = com.ml.tomatoscan.R.string.settings_change_name),
+                            subtitle = stringResource(id = com.ml.tomatoscan.R.string.settings_current_name, userName),
                             onClick = { showNameDialog = true }
                         )
                     )
@@ -89,44 +100,59 @@ fun SettingsScreen(
 
                 // App Section
                 SettingsSection(
-                    title = "Application",
+                    title = stringResource(id = com.ml.tomatoscan.R.string.settings_section_application),
                     items = listOf(
                         SettingsItem(
                             icon = Icons.Default.Palette,
-                            title = "Theme",
-                            subtitle = "Customize app appearance",
+                            title = stringResource(id = com.ml.tomatoscan.R.string.settings_theme),
+                            subtitle = when (themeMode) {
+                                                            "light" -> stringResource(id = com.ml.tomatoscan.R.string.theme_light)
+                                                            "dark" -> stringResource(id = com.ml.tomatoscan.R.string.theme_dark)
+                                                            else -> stringResource(id = com.ml.tomatoscan.R.string.system_default)
+                                                        },
                             onClick = { showThemeDialog = true }
                         ),
                         SettingsItem(
-                            icon = Icons.Default.Notifications,
-                            title = "Notifications",
-                            subtitle = "Manage notification preferences",
-                            onClick = { /* TODO */ }
-                        ),
-                        SettingsItem(
                             icon = Icons.Default.Language,
-                            title = "Language",
-                            subtitle = "Choose your preferred language",
-                            onClick = { /* TODO */ }
+                            title = stringResource(id = com.ml.tomatoscan.R.string.settings_language),
+                            subtitle = when (appLanguage) {
+                                                            "en" -> stringResource(id = com.ml.tomatoscan.R.string.language_en)
+                                                            "tl" -> stringResource(id = com.ml.tomatoscan.R.string.language_fil)
+                                                            "ceb" -> stringResource(id = com.ml.tomatoscan.R.string.language_ceb)
+                                                            else -> stringResource(id = com.ml.tomatoscan.R.string.system_default)
+                                                        },
+                            onClick = { showLanguageDialog = true }
                         )
                     )
                 )
 
                 // Data Section
                 SettingsSection(
-                    title = "Data & Privacy",
+                    title = stringResource(id = com.ml.tomatoscan.R.string.settings_section_data_privacy),
                     items = listOf(
                         SettingsItem(
                             icon = Icons.Default.Security,
-                            title = "Privacy Policy",
-                            subtitle = "View our privacy policy",
-                            onClick = { /* TODO */ }
+                            title = stringResource(id = com.ml.tomatoscan.R.string.settings_privacy_policy),
+                            subtitle = stringResource(id = com.ml.tomatoscan.R.string.settings_privacy_policy_sub),
+                            onClick = {
+                                // Open privacy policy URL
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/privacy"))
+                                runCatching { context.startActivity(intent) }
+                            }
                         ),
                         SettingsItem(
                             icon = Icons.Default.DeleteSweep,
-                            title = "Clear Data",
-                            subtitle = "Remove all local data",
-                            onClick = { /* TODO */ },
+                            title = stringResource(id = com.ml.tomatoscan.R.string.settings_clear_data),
+                            subtitle = stringResource(id = com.ml.tomatoscan.R.string.settings_clear_data_sub),
+                            onClick = {
+                                coroutineScope.launch {
+                                    // Clear Room history and preferences
+                                    HistoryRepository(context).clearHistory()
+                                    userViewModel.clearAllPreferences()
+                                    // Recreate activity to apply defaults immediately
+                                    (context as? Activity)?.recreate()
+                                }
+                            },
                             textColor = MaterialTheme.colorScheme.error,
                             hasNavigation = false
                         )
@@ -135,19 +161,13 @@ fun SettingsScreen(
 
                 // About Section
                 SettingsSection(
-                    title = "About",
+                    title = stringResource(id = com.ml.tomatoscan.R.string.settings_section_about),
                     items = listOf(
                         SettingsItem(
                             icon = Icons.Default.Info,
-                            title = "About TomatoScan",
-                            subtitle = "Version 1.0.0",
+                            title = stringResource(id = com.ml.tomatoscan.R.string.settings_about_title),
+                            subtitle = stringResource(id = com.ml.tomatoscan.R.string.common_version, "1.0.0"),
                             onClick = { showAboutDialog = true }
-                        ),
-                        SettingsItem(
-                            icon = Icons.Default.Star,
-                            title = "Rate App",
-                            subtitle = "Rate us on Play Store",
-                            onClick = { /* TODO */ }
                         )
                     )
                 )
@@ -160,7 +180,15 @@ fun SettingsScreen(
     }
 
     if (showThemeDialog) {
-        ThemeDialog(onDismiss = { showThemeDialog = false })
+        ThemeDialog(
+            currentSelection = themeMode,
+            onSelect = { selection ->
+                userViewModel.updateThemeMode(selection)
+                // Recreate to apply immediately
+                (context as? Activity)?.recreate()
+            },
+            onDismiss = { showThemeDialog = false }
+        )
     }
 
     if (showNameDialog) {
@@ -171,6 +199,18 @@ fun SettingsScreen(
                 userViewModel.updateUserName(newName)
                 showNameDialog = false
             }
+        )
+    }
+
+    if (showLanguageDialog) {
+        LanguageDialog(
+            currentSelection = appLanguage,
+            onSelect = { selection ->
+                userViewModel.updateAppLanguage(selection)
+                // Recreate to apply immediately
+                (context as? Activity)?.recreate()
+            },
+            onDismiss = { showLanguageDialog = false }
         )
     }
 }
@@ -263,17 +303,17 @@ fun SettingsItemRow(item: SettingsItem) {
 fun AboutDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.Info, contentDescription = "About") },
-        title = { Text("About TomatoScan", fontWeight = FontWeight.Bold) },
+        icon = { Icon(Icons.Default.Info, contentDescription = stringResource(id = com.ml.tomatoscan.R.string.settings_section_about)) },
+        title = { Text(stringResource(id = com.ml.tomatoscan.R.string.settings_about_title), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Version 1.0.0", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(id = com.ml.tomatoscan.R.string.common_version, "1.0.0"), style = MaterialTheme.typography.labelLarge)
                 Text(
-                    "An AI-powered app to help you identify tomato leaf diseases and get treatment advice.",
+                    stringResource(id = com.ml.tomatoscan.R.string.settings_about_app_desc),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    "Powered by Google Gemini AI",
+                    stringResource(id = com.ml.tomatoscan.R.string.settings_about_powered_by),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -286,18 +326,16 @@ fun AboutDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-fun ThemeDialog(onDismiss: () -> Unit) {
+fun ThemeDialog(currentSelection: String, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Palette, contentDescription = "Theme") },
-        title = { Text("Choose Theme", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(id = com.ml.tomatoscan.R.string.dialog_theme_title), fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                // In a real app, you'd get this from a ViewModel/datastore
-                val currentSelection = "System Default"
-                ThemeOption("System Default", currentSelection == "System Default") { /* TODO */ }
-                ThemeOption("Light", currentSelection == "Light") { /* TODO */ }
-                ThemeOption("Dark", currentSelection == "Dark") { /* TODO */ }
+                ThemeOption(stringResource(id = com.ml.tomatoscan.R.string.theme_system), currentSelection == "system") { onSelect("system"); onDismiss() }
+                ThemeOption(stringResource(id = com.ml.tomatoscan.R.string.theme_light), currentSelection == "light") { onSelect("light"); onDismiss() }
+                ThemeOption(stringResource(id = com.ml.tomatoscan.R.string.theme_dark), currentSelection == "dark") { onSelect("dark"); onDismiss() }
             }
         },
         confirmButton = {
@@ -320,6 +358,26 @@ fun ThemeOption(title: String, isSelected: Boolean, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(12.dp))
         Text(title, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+@Composable
+fun LanguageDialog(currentSelection: String, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Language, contentDescription = "Language") },
+        title = { Text(stringResource(id = com.ml.tomatoscan.R.string.dialog_language_title), fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                ThemeOption(stringResource(id = com.ml.tomatoscan.R.string.language_system), currentSelection == "system") { onSelect("system"); onDismiss() }
+                ThemeOption(stringResource(id = com.ml.tomatoscan.R.string.language_en), currentSelection == "en") { onSelect("en"); onDismiss() }
+                ThemeOption(stringResource(id = com.ml.tomatoscan.R.string.language_fil), currentSelection == "tl") { onSelect("tl"); onDismiss() }
+                ThemeOption(stringResource(id = com.ml.tomatoscan.R.string.language_ceb), currentSelection == "ceb") { onSelect("ceb"); onDismiss() }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
 }
 
 @Composable
