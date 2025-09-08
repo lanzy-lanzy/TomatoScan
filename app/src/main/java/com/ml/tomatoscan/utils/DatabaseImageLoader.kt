@@ -31,26 +31,33 @@ class DatabaseImageFetcher(
                     if (file.exists()) {
                         val bitmap = BitmapFactory.decodeFile(filePath)
                         if (bitmap != null) {
+                            Log.d("DatabaseImageFetcher", "Successfully loaded image from: $filePath")
                             DrawableResult(
                                 drawable = bitmap.toDrawable(context.resources),
                                 isSampled = false,
                                 dataSource = DataSource.DISK
                             )
                         } else {
+                            Log.w("DatabaseImageFetcher", "Failed to decode bitmap from file: $filePath")
                             null
                         }
                     } else {
+                        Log.w("DatabaseImageFetcher", "Image file not found: $filePath")
                         null
                     }
                 }
                 data.startsWith("internal_storage_image_") -> {
                     // Handle placeholder - return a default image or create from stored data
+                    Log.d("DatabaseImageFetcher", "Placeholder image requested: $data")
                     null // For now, return null to show placeholder
                 }
-                else -> null
+                else -> {
+                    Log.d("DatabaseImageFetcher", "Unsupported data format: $data")
+                    null
+                }
             }
         } catch (e: Exception) {
-            Log.e("DatabaseImageFetcher", "Failed to fetch image", e)
+            Log.e("DatabaseImageFetcher", "Failed to fetch image: $data", e)
             null
         }
     }

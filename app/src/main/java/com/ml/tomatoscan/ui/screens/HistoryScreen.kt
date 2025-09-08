@@ -289,18 +289,29 @@ fun HistoryItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Accent bar by severity
+            Box(
+                modifier = Modifier
+                    .width(6.dp)
+                    .height(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(diseaseColor.copy(alpha = 0.85f))
+            )
+            Spacer(modifier = Modifier.width(12.dp))
             // Image
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(scanResult.imageUrl)
-                    .memoryCacheKey(scanResult.timestamp.toString())
+                    .memoryCacheKey("history_${scanResult.timestamp}")
+                    .diskCacheKey("history_${scanResult.timestamp}")
                     .crossfade(true)
                     .build(),
                 imageLoader = imageLoader,
@@ -426,6 +437,8 @@ fun ScanResultDetailDialog(
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(scanResult.imageUrl)
+                            .memoryCacheKey("history_${scanResult.timestamp}")
+                            .diskCacheKey("history_${scanResult.timestamp}")
                             .crossfade(true)
                             .build(),
                         contentDescription = "Scanned tomato leaf",

@@ -27,7 +27,7 @@ class GeminiApi {
         private val generativeModel by lazy {
             try {
                 GenerativeModel(
-                    modelName = "gemini-1.5-flash",
+                    modelName = "gemini-2.5-flash",
                     apiKey = API_KEY
                 )
             } catch (e: Exception) {

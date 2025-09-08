@@ -20,6 +20,11 @@ class ImageStorageHelper(private val context: Context) {
             }
         }
     }
+
+    /**
+     * Image directory for external access
+     */
+    fun getAnalysisImageDirectory(): File = imageDirectory
     
     /**
      * Convert image URI to byte array for database storage
