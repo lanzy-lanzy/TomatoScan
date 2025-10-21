@@ -1,9 +1,11 @@
 package com.ml.tomatoscan.data
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
+import com.ml.tomatoscan.utils.ImagePreprocessor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -19,7 +21,9 @@ data class TomatoAnalysisResult(
     val preventionMeasures: List<String>
 )
 
-class GeminiApi {
+class GeminiApi(context: Context) {
+    
+    private val analysisCache = AnalysisCache(context)
 
     companion object {
         private const val API_KEY = "AIzaSyBD15s-m0ClELhAR7XbbVPRkSFlQzcu_fQ"
@@ -40,17 +44,28 @@ class GeminiApi {
     suspend fun analyzeTomatoLeaf(bitmap: Bitmap): TomatoAnalysisResult {
         return withContext(Dispatchers.IO) {
             try {
+                // Check cache first for consistent results
+                val cachedResult = analysisCache.getCachedResult(bitmap)
+                if (cachedResult != null) {
+                    Log.d("GeminiApi", "Returning cached result for consistent analysis")
+                    return@withContext cachedResult
+                }
+                
+                // Preprocess image for consistent analysis
+                val preprocessedBitmap = ImagePreprocessor.preprocessForAnalysis(bitmap)
+                Log.d("GeminiApi", "Image preprocessed: ${preprocessedBitmap.width}x${preprocessedBitmap.height}")
+                
                 val prompt = """
                     You are an expert agricultural pathologist specializing in tomato plant diseases. 
                     Your first task is to determine if the uploaded image is a tomato leaf. 
 
                     If the image is NOT a tomato leaf or is unclear, respond ONLY with the following JSON structure:
                     {
-                        "diseaseDetected": "Invalid Image",
+                        "diseaseDetected": "Not a Tomato Leaf",
                         "confidence": 100.0,
                         "severity": "Unknown",
-                        "description": "The uploaded image does not appear to be a tomato leaf. Please upload a clear image of a tomato leaf for analysis.",
-                        "recommendations": [],
+                        "description": "This doesn't appear to be a tomato leaf. Please capture a clear photo of a tomato plant leaf for accurate disease analysis.",
+                        "recommendations": ["Take a photo of an actual tomato leaf", "Ensure the leaf fills most of the frame", "Use good lighting for better results"],
                         "treatmentOptions": [],
                         "preventionMeasures": []
                     }
@@ -101,7 +116,7 @@ class GeminiApi {
                 """.trimIndent()
 
                 val inputContent = content {
-                    image(bitmap)
+                    image(preprocessedBitmap)
                     text(prompt)
                 }
 
@@ -128,7 +143,7 @@ class GeminiApi {
                 val treatmentOptions = parseJsonArray(jsonResponse.optJSONArray("treatmentOptions"))
                 val preventionMeasures = parseJsonArray(jsonResponse.optJSONArray("preventionMeasures"))
 
-                TomatoAnalysisResult(
+                val result = TomatoAnalysisResult(
                     diseaseDetected = diseaseDetected,
                     confidence = confidence,
                     severity = severity,
@@ -137,6 +152,12 @@ class GeminiApi {
                     treatmentOptions = treatmentOptions,
                     preventionMeasures = preventionMeasures
                 )
+                
+                // Cache the result for future consistency
+                analysisCache.cacheResult(bitmap, result)
+                Log.d("GeminiApi", "Analysis result cached for consistency")
+                
+                result
 
             } catch (e: Exception) {
                 Log.e("GeminiApi", "Error analyzing tomato leaf", e)

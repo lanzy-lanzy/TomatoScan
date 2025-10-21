@@ -42,11 +42,24 @@ fun CaptureImageScreen(
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) {
             imageUri?.let { uri ->
-                bitmap = if (Build.VERSION.SDK_INT < 28) {
-                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-                } else {
-                    val source = ImageDecoder.createSource(context.contentResolver, uri)
-                    ImageDecoder.decodeBitmap(source)
+                try {
+                    bitmap = if (Build.VERSION.SDK_INT < 28) {
+                        MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                    } else {
+                        val source = ImageDecoder.createSource(context.contentResolver, uri)
+                        // Force software bitmap to avoid HARDWARE config issues
+                        ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("CaptureImageScreen", "Error loading bitmap", e)
+                    // Try alternative method if ImageDecoder fails
+                    try {
+                        bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                    } catch (e2: Exception) {
+                        android.util.Log.e("CaptureImageScreen", "Fallback bitmap loading failed", e2)
+                    }
                 }
             }
         }

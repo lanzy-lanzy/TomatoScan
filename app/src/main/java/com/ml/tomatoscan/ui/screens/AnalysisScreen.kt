@@ -224,7 +224,10 @@ fun AnalysisScreen(
                                     MediaStore.Images.Media.getBitmap(context.contentResolver, currentUri)
                                 } else {
                                     val source = ImageDecoder.createSource(context.contentResolver, currentUri)
-                                    ImageDecoder.decodeBitmap(source)
+                                    // Force software bitmap to avoid HARDWARE config issues
+                                    ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                                    }
                                 }
                                 viewModel.analyzeImage(bitmap, currentUri)
                             },
@@ -298,7 +301,10 @@ private fun ImagePreview(
             MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         } else {
             val source = ImageDecoder.createSource(context.contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
+            // Force software bitmap for display
+            ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            }
         }
     }
 
@@ -350,7 +356,10 @@ private fun AnalysisInProgressScreen(uri: Uri) {
             MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         } else {
             val source = ImageDecoder.createSource(context.contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
+            // Force software bitmap for display
+            ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            }
         }
     }
 

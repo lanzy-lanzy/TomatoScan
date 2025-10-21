@@ -24,7 +24,7 @@ import java.util.Date
 
 class TomatoScanViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val geminiApi = GeminiApi()
+    private val geminiApi = GeminiApi(application)
     private val firebaseData = FirebaseData()
     private val historyRepository: HistoryRepository = HistoryRepository(application)
 
@@ -77,6 +77,15 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
             try {
                 android.util.Log.d("TomatoScanViewModel", "Starting tomato leaf disease analysis...")
                 
+                // Validate image quality first
+                val qualityReport = com.ml.tomatoscan.utils.ImageQualityValidator.validateImageQuality(bitmap)
+                android.util.Log.d("TomatoScanViewModel", "Image quality score: ${qualityReport.score}")
+                
+                if (!qualityReport.isValid) {
+                    android.util.Log.w("TomatoScanViewModel", "Image quality issues: ${qualityReport.issues}")
+                    // Still proceed but note the quality issues
+                }
+                
                 // Call the real Gemini API for analysis
                 val analysisResult = geminiApi.analyzeTomatoLeaf(bitmap)
                 
@@ -85,6 +94,7 @@ class TomatoScanViewModel(application: Application) : AndroidViewModel(applicati
                 
                 // Convert to legacy quality format for UI compatibility
                 val quality = when {
+                    analysisResult.diseaseDetected.equals("Not a Tomato Leaf", ignoreCase = true) -> "Invalid"
                     analysisResult.diseaseDetected.equals("Invalid Image", ignoreCase = true) -> "Invalid"
                     analysisResult.diseaseDetected.equals("Healthy", ignoreCase = true) -> "Excellent"
                     analysisResult.severity.equals("Mild", ignoreCase = true) -> "Good"
