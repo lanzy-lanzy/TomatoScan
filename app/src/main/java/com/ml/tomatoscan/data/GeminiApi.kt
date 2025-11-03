@@ -101,16 +101,14 @@ class GeminiApi(context: Context) {
                         "diseaseDetected": "Not a Tomato Leaf",
                         "confidence": 100.0,
                         "severity": "Unknown",
-                        "description": "This doesn't appear to be a tomato leaf. Please capture a clear photo of a tomato plant leaf for accurate disease analysis. Tomato leaves are compound with 5-9 serrated leaflets.",
-                        "recommendations": ["Take a photo of an actual tomato leaf with visible compound structure", "Ensure the leaf fills most of the frame", "Use good lighting to show leaf details clearly", "Make sure leaflets and serrated edges are visible"],
+                        "description": "This doesn't appear to be a tomato leaf. Please capture a clear photo of a tomato plant leaf for accurate disease analysis.",
+                        "recommendations": ["Take a photo of an actual tomato leaf", "Ensure the leaf fills most of the frame", "Use good lighting for better results"],
                         "treatmentOptions": [],
                         "preventionMeasures": []
                     }
 
                     STEP 2: Identify the disease with precision
-                    ONLY proceed to this step if you are 100% certain the image shows a tomato leaf with the characteristics listed above.
-                    
-                    If the image IS DEFINITELY a tomato leaf (confirmed by compound structure with serrated leaflets), carefully examine the visual symptoms and identify the most probable disease.
+                    If the image IS a tomato leaf, carefully examine the visual symptoms and identify the most probable disease.
                     
                     Look for these KEY VISUAL EVIDENCE for each disease:
                     
