@@ -614,55 +614,7 @@ fun DiseaseInformationSection() {
                 ),
                 optimalConditions = "Maintain good air circulation, avoid overhead watering, and remove lower leaves to prevent this common fungal disease."
             ),
-            TomatoDisease(
-                name = "Fusarium Wilt",
-                description = "Soilborne fungal disease causing wilting and vascular discoloration",
-                symptoms = "One-sided wilting, yellowing leaves, brown vascular streaks",
-                severity = DiseaseSeverity.CRITICAL,
-                icon = Icons.Default.LocalFlorist,
-                imageUrl = "https://content.ces.ncsu.edu/media/images/2_MzYX798.jpeg",
-                detailedSymptoms = listOf(
-                    "One-sided wilting of leaves or branches",
-                    "Lower leaves turn yellow first",
-                    "Brown streaks in vascular tissue",
-                    "Stunted plant growth",
-                    "Few or no fruit development",
-                    "Permanent wilting regardless of watering"
-                ),
-                causes = listOf(
-                    "Fusarium oxysporum f. sp. lycopersici",
-                    "Soilborne fungal pathogen",
-                    "Warm soil temperatures",
-                    "Acidic soil pH (5.0-5.5)",
-                    "High humidity conditions",
-                    "Contaminated soil or tools"
-                ),
-                prevention = listOf(
-                    "Plant resistant varieties",
-                    "Use grafted tomatoes",
-                    "Rotate crops for 3-5 years",
-                    "Maintain neutral soil pH (6.5-7.0)",
-                    "Use sterile potting media",
-                    "Clean equipment between fields"
-                ),
-                treatment = listOf(
-                    "No cure once established",
-                    "Remove and destroy infected plants",
-                    "Soil fumigation (conventional)",
-                    "Use resistant rootstocks",
-                    "Improve soil drainage",
-                    "Apply preventive fungicides"
-                ),
-                progressionStages = listOf(
-                    "One-sided wilting appears",
-                    "Lower leaves turn yellow",
-                    "Vascular browning visible",
-                    "Wilting becomes permanent",
-                    "Progressive defoliation",
-                    "Plant death"
-                ),
-                optimalConditions = "Cool, well-drained soil with neutral pH and good air circulation"
-            )
+
         )
     }
 

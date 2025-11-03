@@ -42,6 +42,7 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
     val userName by userViewModel.userName.collectAsState()
     val themeMode by userViewModel.themeMode.collectAsState()
     val appLanguage by userViewModel.appLanguage.collectAsState()
@@ -134,11 +135,7 @@ fun SettingsScreen(
                             icon = Icons.Default.Security,
                             title = stringResource(id = com.ml.tomatoscan.R.string.settings_privacy_policy),
                             subtitle = stringResource(id = com.ml.tomatoscan.R.string.settings_privacy_policy_sub),
-                            onClick = {
-                                // Open privacy policy URL
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/privacy"))
-                                runCatching { context.startActivity(intent) }
-                            }
+                            onClick = { showPrivacyDialog = true }
                         ),
                         SettingsItem(
                             icon = Icons.Default.DeleteSweep,
@@ -212,6 +209,10 @@ fun SettingsScreen(
             },
             onDismiss = { showLanguageDialog = false }
         )
+    }
+
+    if (showPrivacyDialog) {
+        PrivacyPolicyDialog(onDismiss = { showPrivacyDialog = false })
     }
 }
 
@@ -408,6 +409,110 @@ fun NameChangeDialog(currentName: String, onDismiss: () -> Unit, onConfirm: (Str
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Security, contentDescription = "Privacy Policy") },
+        title = { Text("Privacy Policy", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "TomatoScan Privacy Policy",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                
+                Text(
+                    "Last Updated: November 2025",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Text(
+                    "1. Data Collection",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "TomatoScan collects and stores scan history locally on your device. Images analyzed are processed using Google's Gemini AI API. We do not store your images on our servers.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Text(
+                    "2. Image Processing",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "Images you upload are sent to Google's Gemini AI for disease analysis. Please refer to Google's privacy policy for information on how they handle data.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Text(
+                    "3. Local Storage",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "All scan results and user preferences are stored locally on your device. You can clear this data at any time from the Settings menu.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Text(
+                    "4. Third-Party Services",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "This app uses Google Gemini AI API for disease detection. By using this app, you agree to Google's terms of service and privacy policy.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Text(
+                    "5. Data Security",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "We implement appropriate security measures to protect your data. However, no method of transmission over the internet is 100% secure.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Text(
+                    "6. Your Rights",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "You have the right to access, modify, or delete your data at any time through the app settings. You can clear all data using the 'Clear All Data' option.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Text(
+                    "7. Contact",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "For privacy concerns or questions, please contact us through the app's support channels.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { 
+                Text("Close") 
             }
         }
     )
