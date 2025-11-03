@@ -70,24 +70,47 @@ class GeminiApi(context: Context) {
                     Be conservative and precise in your diagnosis. Prioritize known symptoms and visual evidence.
                     Always provide the same diagnosis for the same visual symptoms to ensure consistency.
                     
-                    Analyze this tomato leaf image with precision and consistency.
+                    Analyze this image with precision and consistency.
                     
-                    STEP 1: Verify this is a tomato leaf
-                    First, determine if the uploaded image is a tomato leaf. 
+                    STEP 1: STRICTLY VERIFY THIS IS A TOMATO LEAF (CRITICAL STEP)
+                    
+                    You MUST be extremely strict in identifying tomato leaves. Look for these SPECIFIC tomato leaf characteristics:
+                    
+                    TOMATO LEAF IDENTIFICATION FEATURES (ALL must be present):
+                    - Compound leaves with 5-9 leaflets arranged alternately
+                    - Leaflets have serrated (toothed) edges with irregular, pointed teeth
+                    - Distinctive strong tomato plant smell (if fresh)
+                    - Leaflets are oval to lance-shaped
+                    - Terminal leaflet at the tip
+                    - Slightly hairy or fuzzy texture on stems and leaves
+                    - Medium to dark green color (unless diseased)
+                    
+                    REJECT if you see these NON-TOMATO characteristics:
+                    - Simple leaves (not compound) - REJECT
+                    - Smooth edges without serrations - REJECT
+                    - Potato leaves (which have larger, more rounded leaflets) - REJECT
+                    - Pepper leaves (which are simpler and more elongated) - REJECT
+                    - Any other plant species - REJECT
+                    - Unclear or blurry images where leaf structure cannot be confirmed - REJECT
+                    - Images of fruits, flowers, or stems without clear leaf structure - REJECT
+                    
+                    BE EXTREMELY CONSERVATIVE: If you have ANY doubt about whether this is a tomato leaf, or if the leaf structure is not clearly visible, you MUST reject it.
 
-                    If the image is NOT a tomato leaf or is unclear, respond ONLY with the following JSON structure:
+                    If the image is NOT a tomato leaf, is unclear, or you cannot confidently confirm it's a tomato leaf, respond ONLY with the following JSON structure:
                     {
                         "diseaseDetected": "Not a Tomato Leaf",
                         "confidence": 100.0,
                         "severity": "Unknown",
-                        "description": "This doesn't appear to be a tomato leaf. Please capture a clear photo of a tomato plant leaf for accurate disease analysis.",
-                        "recommendations": ["Take a photo of an actual tomato leaf", "Ensure the leaf fills most of the frame", "Use good lighting for better results"],
+                        "description": "This doesn't appear to be a tomato leaf. Please capture a clear photo of a tomato plant leaf for accurate disease analysis. Tomato leaves are compound with 5-9 serrated leaflets.",
+                        "recommendations": ["Take a photo of an actual tomato leaf with visible compound structure", "Ensure the leaf fills most of the frame", "Use good lighting to show leaf details clearly", "Make sure leaflets and serrated edges are visible"],
                         "treatmentOptions": [],
                         "preventionMeasures": []
                     }
 
                     STEP 2: Identify the disease with precision
-                    If the image IS a tomato leaf, carefully examine the visual symptoms and identify the most probable disease.
+                    ONLY proceed to this step if you are 100% certain the image shows a tomato leaf with the characteristics listed above.
+                    
+                    If the image IS DEFINITELY a tomato leaf (confirmed by compound structure with serrated leaflets), carefully examine the visual symptoms and identify the most probable disease.
                     
                     Look for these KEY VISUAL EVIDENCE for each disease:
                     
