@@ -2,12 +2,17 @@ package com.ml.tomatoscan.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
 import com.google.ai.client.generativeai.type.generationConfig
+import com.ml.tomatoscan.ml.ClassificationResult
+import com.ml.tomatoscan.models.DiagnosticReport
+import com.ml.tomatoscan.models.DiseaseClass
 import com.ml.tomatoscan.utils.ImagePreprocessor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,24 +29,30 @@ data class TomatoAnalysisResult(
     val preventionMeasures: List<String>
 )
 
-class GeminiApi(context: Context) {
+class GeminiApi(private val context: Context) {
     
     private val analysisCache = AnalysisCache(context)
 
     companion object {
-        private const val API_KEY = "AIzaSyBD15s-m0ClELhAR7XbbVPRkSFlQzcu_fQ"
+        private const val MODEL_VERSION = "1.0.0"
 
         private val generativeModel by lazy {
             try {
-                GenerativeModel(
-                    modelName = "gemini-2.5-flash",
-                    apiKey = API_KEY,
-                    generationConfig = generationConfig {
-                        temperature = 0.1f  // Low temperature for consistent, deterministic results
-                        topK = 1
-                        topP = 0.8f
-                    }
-                )
+                val apiKey = com.ml.tomatoscan.config.GeminiConfig.API_KEY
+                if (apiKey.isBlank()) {
+                    Log.w("GeminiApi", "Gemini API key is not configured")
+                    null
+                } else {
+                    GenerativeModel(
+                        modelName = com.ml.tomatoscan.BuildConfig.GEMINI_MODEL_NAME,
+                        apiKey = apiKey,
+                        generationConfig = generationConfig {
+                            temperature = com.ml.tomatoscan.config.GeminiConfig.TEMPERATURE
+                            topK = com.ml.tomatoscan.config.GeminiConfig.TOP_K
+                            topP = com.ml.tomatoscan.config.GeminiConfig.TOP_P
+                        }
+                    )
+                }
             } catch (e: Exception) {
                 Log.e("GeminiApi", "Failed to initialize Gemini model", e)
                 null
@@ -265,5 +276,336 @@ class GeminiApi(context: Context) {
             else -> "Poor"
         }
         return Pair(quality, result.confidence)
+    }
+
+    /**
+     * Generates a formal diagnostic report based on TFLite classification result.
+     * Uses deterministic Gemini parameters to ensure consistent outputs.
+     *
+     * @param croppedLeaf The cropped leaf image
+     * @param preliminaryResult The TFLite classification result
+     * @return Formal diagnostic report
+     */
+    suspend fun generateDiagnosticReport(
+        croppedLeaf: Bitmap,
+        preliminaryResult: ClassificationResult
+    ): DiagnosticReport {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Check if confidence is too low
+                if (preliminaryResult.confidence < 0.5f) {
+                    return@withContext createUncertainReport(
+                        "Low classification confidence (${String.format("%.1f%%", preliminaryResult.confidence * 100)})"
+                    )
+                }
+
+                // Create formal diagnostic report prompt
+                val prompt = createFormalDiagnosticPrompt(preliminaryResult)
+
+                val inputContent = content {
+                    image(croppedLeaf)
+                    text(prompt)
+                }
+
+                if (generativeModel == null) {
+                    throw Exception("Gemini API not properly configured")
+                }
+
+                Log.d("GeminiApi", "Generating formal diagnostic report...")
+                val response = generativeModel!!.generateContent(inputContent)
+                val responseText = response.text ?: ""
+                Log.d("GeminiApi", "Received diagnostic report: $responseText")
+
+                // Parse and validate the report
+                parseDiagnosticReport(responseText, preliminaryResult)
+
+            } catch (e: Exception) {
+                Log.e("GeminiApi", "Error generating diagnostic report", e)
+                // Return fallback report based on TFLite prediction
+                createFallbackReport(preliminaryResult)
+            }
+        }
+    }
+
+    /**
+     * Creates the formal diagnostic report prompt template.
+     * Includes role definition, TFLite context, and exact report structure.
+     */
+    private fun createFormalDiagnosticPrompt(preliminaryResult: ClassificationResult): String {
+        val diseaseClass = preliminaryResult.diseaseClass
+        val confidence = String.format("%.1f%%", preliminaryResult.confidence * 100)
+
+        return """
+            You are a plant pathology expert specializing in tomato leaf diseases.
+            
+            A TensorFlow Lite model has analyzed this tomato leaf image and predicted:
+            - Disease: ${diseaseClass.displayName}
+            - Confidence: $confidence
+            
+            Your task is to validate this prediction and generate a formal diagnostic report.
+            
+            REPORT STRUCTURE (3-5 sentences):
+            1. Disease Identification: Start with "Based on the image analysis, the tomato leaf is identified as **[Disease Name]**."
+            2. Observed Symptoms: Describe the specific visual symptoms you observe (e.g., lesion patterns, discoloration, texture).
+            3. Confidence Assessment: State your confidence level in this diagnosis (e.g., "High confidence", "Moderate confidence").
+            4. Management Recommendation: Provide specific management or treatment recommendations.
+            
+            FORMATTING REQUIREMENTS:
+            - Use bold formatting (**Disease Name**) for the disease name
+            - Write in formal, academic tone
+            - Be concise: 3-5 sentences total
+            - Do not use conversational language
+            - Focus on observable evidence
+            
+            EXAMPLE FORMAT:
+            "Based on the image analysis, the tomato leaf is identified as **Early Blight**. The leaf exhibits characteristic concentric ring patterns forming target-like lesions with dark brown coloration and yellow halos, primarily affecting the lower leaf sections. High confidence in this diagnosis based on the distinct symptom presentation. Immediate removal of affected leaves is recommended, followed by application of copper-based fungicides and improved air circulation around plants."
+            
+            Generate the formal diagnostic report now:
+        """.trimIndent()
+    }
+
+    /**
+     * Parses Gemini response into DiagnosticReport structure.
+     * Validates that all required components are present.
+     */
+    private fun parseDiagnosticReport(
+        responseText: String,
+        preliminaryResult: ClassificationResult
+    ): DiagnosticReport {
+        try {
+            val fullReport = responseText.trim()
+
+            // Extract disease name (look for text between ** **)
+            val diseaseNameRegex = """\*\*([^*]+)\*\*""".toRegex()
+            val diseaseNameMatch = diseaseNameRegex.find(fullReport)
+            val diseaseName = diseaseNameMatch?.groupValues?.get(1)?.trim()
+                ?: preliminaryResult.diseaseClass.displayName
+
+            // Split report into sentences
+            val sentences = fullReport.split(". ").map { it.trim() }.filter { it.isNotEmpty() }
+
+            // Extract components (heuristic approach)
+            val observedSymptoms = extractObservedSymptoms(sentences)
+            val confidenceLevel = extractConfidenceLevel(sentences)
+            val managementRecommendation = extractManagementRecommendation(sentences)
+
+            // Validate report has minimum required content
+            if (fullReport.length < 50) {
+                throw Exception("Report too short, using fallback")
+            }
+
+            return DiagnosticReport(
+                diseaseName = diseaseName,
+                observedSymptoms = observedSymptoms,
+                confidenceLevel = confidenceLevel,
+                managementRecommendation = managementRecommendation,
+                fullReport = fullReport,
+                isUncertain = false,
+                timestamp = System.currentTimeMillis(),
+                modelVersion = MODEL_VERSION
+            )
+
+        } catch (e: Exception) {
+            Log.e("GeminiApi", "Error parsing diagnostic report, using fallback", e)
+            return createFallbackReport(preliminaryResult)
+        }
+    }
+
+    /**
+     * Extracts observed symptoms from report sentences.
+     */
+    private fun extractObservedSymptoms(sentences: List<String>): String {
+        // Look for sentences describing visual characteristics
+        val symptomKeywords = listOf("exhibit", "show", "display", "observe", "lesion", "spot", "discolor", "pattern")
+        val symptomSentence = sentences.find { sentence ->
+            symptomKeywords.any { keyword -> sentence.contains(keyword, ignoreCase = true) }
+        }
+        return symptomSentence ?: "Visual symptoms consistent with the identified disease."
+    }
+
+    /**
+     * Extracts confidence level from report sentences.
+     */
+    private fun extractConfidenceLevel(sentences: List<String>): String {
+        // Look for sentences mentioning confidence
+        val confidenceKeywords = listOf("confidence", "certain", "likely", "probable")
+        val confidenceSentence = sentences.find { sentence ->
+            confidenceKeywords.any { keyword -> sentence.contains(keyword, ignoreCase = true) }
+        }
+        return confidenceSentence ?: "Moderate confidence based on visual analysis."
+    }
+
+    /**
+     * Extracts management recommendation from report sentences.
+     */
+    private fun extractManagementRecommendation(sentences: List<String>): String {
+        // Look for sentences with recommendations (usually last sentence or contains action words)
+        val actionKeywords = listOf("recommend", "apply", "remove", "treat", "spray", "prune", "improve")
+        val recommendationSentence = sentences.findLast { sentence ->
+            actionKeywords.any { keyword -> sentence.contains(keyword, ignoreCase = true) }
+        }
+        return recommendationSentence ?: "Consult with agricultural expert for specific treatment recommendations."
+    }
+
+    /**
+     * Creates an Uncertain diagnostic report for poor quality images or low confidence.
+     */
+    private fun createUncertainReport(reason: String): DiagnosticReport {
+        val fullReport = "The analysis result is **Uncertain** due to poor image quality, lighting, or focus. A clearer photo is recommended for a more reliable diagnosis."
+        
+        return DiagnosticReport(
+            diseaseName = "Uncertain",
+            observedSymptoms = "Unable to clearly identify symptoms due to image quality issues.",
+            confidenceLevel = "Low confidence - $reason",
+            managementRecommendation = "Please capture a clearer image with better lighting and focus for accurate diagnosis.",
+            fullReport = fullReport,
+            isUncertain = true,
+            timestamp = System.currentTimeMillis(),
+            modelVersion = MODEL_VERSION
+        )
+    }
+
+    /**
+     * Creates a fallback diagnostic report based on TFLite prediction when Gemini is unavailable.
+     */
+    private fun createFallbackReport(classificationResult: ClassificationResult): DiagnosticReport {
+        val diseaseName = classificationResult.diseaseClass.displayName
+        val confidence = String.format("%.1f%%", classificationResult.confidence * 100)
+
+        val fullReport = "Based on the image analysis, the tomato leaf is identified as **$diseaseName**. " +
+                "Classification confidence: $confidence. " +
+                "Note: This is a preliminary classification without formal validation. " +
+                "Consult with an agricultural expert for detailed diagnosis and treatment recommendations."
+
+        return DiagnosticReport(
+            diseaseName = diseaseName,
+            observedSymptoms = "Automated classification based on visual patterns.",
+            confidenceLevel = "Classification confidence: $confidence (preliminary)",
+            managementRecommendation = "Consult with agricultural expert for specific treatment recommendations.",
+            fullReport = fullReport,
+            isUncertain = classificationResult.confidence < 0.5f,
+            timestamp = System.currentTimeMillis(),
+            modelVersion = MODEL_VERSION
+        )
+    }
+
+    /**
+     * Checks if the Gemini service is available.
+     * Verifies API key configuration and network connectivity.
+     *
+     * @return True if Gemini can be used, false otherwise
+     */
+    fun isAvailable(): Boolean {
+        // Check if API key is configured
+        val apiKey = com.ml.tomatoscan.config.GeminiConfig.API_KEY
+        if (apiKey.isBlank() || apiKey == "YOUR_API_KEY_HERE" || apiKey == "PLACEHOLDER") {
+            Log.w("GeminiApi", "Gemini API key not configured")
+            return false
+        }
+
+        // Check if model is initialized
+        if (generativeModel == null) {
+            Log.w("GeminiApi", "Gemini model not initialized")
+            return false
+        }
+
+        // Check network connectivity
+        if (!isNetworkAvailable()) {
+            Log.w("GeminiApi", "Network not available")
+            return false
+        }
+
+        return true
+    }
+
+    /**
+     * Checks if network connectivity is available.
+     */
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val network = connectivityManager.activeNetwork ?: return false
+                val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+                
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            } else {
+                @Suppress("DEPRECATION")
+                val networkInfo = connectivityManager.activeNetworkInfo
+                networkInfo != null && networkInfo.isConnected
+            }
+        } catch (e: Exception) {
+            Log.e("GeminiApi", "Error checking network availability", e)
+            false
+        }
+    }
+    
+    /**
+     * Pre-validates if the image contains a tomato leaf before running YOLO detection.
+     * This is a fast check using Gemini's vision capabilities to reject non-tomato images.
+     * 
+     * @param bitmap The image to validate
+     * @return Pair<Boolean, String> - (isTomatoLeaf, reason)
+     */
+    suspend fun validateIsTomatoLeaf(bitmap: Bitmap): Pair<Boolean, String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val model = generativeModel
+                if (model == null) {
+                    Log.w("GeminiApi", "Gemini model not available for pre-validation")
+                    return@withContext Pair(true, "Gemini unavailable - skipping pre-validation")
+                }
+                
+                // Resize image for faster processing
+                val smallBitmap = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
+                
+                val prompt = """
+                    You are an expert botanist. Analyze this image and answer with ONLY "YES" or "NO":
+                    
+                    Is this image a photograph of a tomato plant leaf?
+                    
+                    Answer YES if:
+                    - The image shows a tomato leaf (healthy or diseased)
+                    - The leaf is clearly visible and recognizable as a tomato leaf
+                    
+                    Answer NO if:
+                    - The image shows a different type of plant
+                    - The image shows non-plant objects (hands, keyboards, furniture, etc.)
+                    - The image is too blurry or unclear to identify
+                    - The image shows something other than a leaf
+                    
+                    Respond with ONLY one word: YES or NO
+                """.trimIndent()
+                
+                val inputContent = content {
+                    image(smallBitmap)
+                    text(prompt)
+                }
+                
+                Log.d("GeminiApi", "Sending pre-validation request to Gemini...")
+                val response = model.generateContent(inputContent)
+                val responseText = response.text?.trim()?.uppercase() ?: ""
+                
+                Log.d("GeminiApi", "Gemini pre-validation response: $responseText")
+                
+                // Parse response
+                val isTomatoLeaf = responseText.contains("YES")
+                val reason = if (isTomatoLeaf) {
+                    "Gemini confirmed: Image contains a tomato leaf"
+                } else {
+                    "Gemini rejected: Image does not appear to be a tomato leaf"
+                }
+                
+                smallBitmap.recycle()
+                Pair(isTomatoLeaf, reason)
+                
+            } catch (e: Exception) {
+                Log.e("GeminiApi", "Error in Gemini pre-validation", e)
+                // On error, allow the image to proceed (fail-open)
+                Pair(true, "Pre-validation error: ${e.message}")
+            }
+        }
     }
 }

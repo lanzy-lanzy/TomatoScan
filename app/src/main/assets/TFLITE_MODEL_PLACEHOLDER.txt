@@ -1,0 +1,25 @@
+MISSING MODEL FILE: tomato_disease_model.tflite
+
+The TFLite disease classification model is missing from this location.
+
+Expected location: app/src/main/assets/tomato_disease_model.tflite
+
+To add the model:
+1. Train or obtain a TFLite model for tomato disease classification
+2. Place the model file at: app/src/main/assets/tomato_disease_model.tflite
+3. Rebuild the app
+
+The model should:
+- Accept 224x224 RGB images as input
+- Output probabilities for 6 disease classes:
+  1. Bacterial Speck
+  2. Early Blight
+  3. Healthy
+  4. Late Blight
+  5. Leaf Mold
+  6. Septoria Leaf Spot
+
+Until the model is added, the app will run with degraded functionality:
+- Disease classification will return UNCERTAIN results
+- The analysis pipeline will still attempt to detect leaves using YOLOv11
+- Gemini AI validation may still work if configured

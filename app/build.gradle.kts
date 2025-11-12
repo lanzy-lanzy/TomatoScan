@@ -19,6 +19,54 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load configuration from local.properties
+        val properties = org.jetbrains.kotlin.konan.properties.Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { properties.load(it) }
+        }
+
+        // Gemini API configuration
+        buildConfigField(
+            "String",
+            "GEMINI_API_KEY",
+            "\"${properties.getProperty("gemini.api.key", "")}\""
+        )
+        buildConfigField(
+            "Boolean",
+            "ENABLE_GEMINI",
+            properties.getProperty("enable.gemini", "true")
+        )
+
+        // Caching configuration
+        buildConfigField(
+            "Boolean",
+            "ENABLE_CACHING",
+            properties.getProperty("enable.caching", "true")
+        )
+
+        // Model version constants
+        buildConfigField(
+            "String",
+            "MODEL_VERSION",
+            "\"1.0.0\""
+        )
+        buildConfigField(
+            "String",
+            "YOLO_MODEL_VERSION",
+            "\"1.0.0\""
+        )
+        buildConfigField(
+            "String",
+            "TFLITE_MODEL_VERSION",
+            "\"1.0.0\""
+        )
+        buildConfigField(
+            "String",
+            "GEMINI_MODEL_NAME",
+            "\"gemini-2.5-pro\""
+        )
     }
 
     buildTypes {
@@ -89,6 +137,11 @@ dependencies {
     
     // Kotlin Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // TensorFlow Lite for object detection and classification
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
 
     // MPAndroidChart
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")

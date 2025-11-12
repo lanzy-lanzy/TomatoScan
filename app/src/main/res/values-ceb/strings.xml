@@ -36,7 +36,7 @@
     <string name="settings_section_about">Mahitungod</string>
     <string name="settings_about_title">Mahitungod sa TomatoScan</string>
     <string name="settings_about_app_desc">Usa ka AI-powered nga app aron makatabang sa pag-ila sa sakit sa dahon sa kamatis ug paghatag og tambag sa pagtambal.</string>
-    <string name="settings_about_powered_by">Giapasundayag sa Google Gemini AI</string>
+    <string name="settings_about_powered_by">Giapasundayag sa Advanced Machine Learning</string>
 
     <!-- Theme Dialog -->
     <string name="dialog_theme_title">Pili og Tema</string>

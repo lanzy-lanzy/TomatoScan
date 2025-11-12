@@ -66,23 +66,32 @@ class ImageQualityValidator {
                 score -= 20f
             }
             
-            // Check for blur (basic edge detection)
+            // Check for blur (basic edge detection) - more lenient threshold
             val sharpnessScore = analyzeSharpness(softwareBitmap)
-            if (sharpnessScore < 0.3f) {
+            if (sharpnessScore < 0.15f) {  // Reduced from 0.3f to be more lenient
                 issues.add("Image appears blurry")
                 suggestions.add("Hold camera steady and ensure proper focus")
                 score -= 15f
             }
             
-            // Check color distribution (ensure it's not monochrome)
+            // Check color distribution (ensure it's not monochrome) - more lenient
             val colorVariance = analyzeColorVariance(softwareBitmap)
-            if (colorVariance < 10f) {
+            if (colorVariance < 5f) {  // Reduced from 10f to be more lenient
                 issues.add("Limited color information")
                 suggestions.add("Ensure proper white balance and natural lighting")
                 score -= 10f
             }
             
-            val isValid = score >= 60f && issues.isEmpty()
+            // Check for green color dominance (tomato leaves should have significant green)
+            val greenDominance = analyzeGreenDominance(softwareBitmap)
+            if (greenDominance < 0.15f) {  // Less than 15% green dominance
+                issues.add("Image does not appear to contain a plant leaf")
+                suggestions.add("Please capture an image of a tomato leaf")
+                score -= 40f  // Heavy penalty for non-leaf images
+            }
+            
+            // More lenient validation - only check score, allow minor issues
+            val isValid = score >= 50f  // Reduced from 60f and removed issues.isEmpty() requirement
             
             return ImageQualityReport(
                 isValid = isValid,
@@ -196,6 +205,35 @@ class ImageQualityValidator {
         private fun calculateVariance(values: List<Int>): Float {
             val mean = values.average()
             return values.map { (it - mean) * (it - mean) }.average().toFloat()
+        }
+        
+        /**
+         * Analyzes how much green color is dominant in the image
+         * Tomato leaves should have significant green color
+         * Returns a score from 0 to 1, where higher means more green dominance
+         */
+        private fun analyzeGreenDominance(bitmap: Bitmap): Float {
+            val smallBitmap = Bitmap.createScaledBitmap(bitmap, 100, 100, false)
+            val pixels = IntArray(10000)
+            smallBitmap.getPixels(pixels, 0, 100, 0, 0, 100, 100)
+            
+            var greenDominantPixels = 0
+            
+            for (pixel in pixels) {
+                val red = Color.red(pixel)
+                val green = Color.green(pixel)
+                val blue = Color.blue(pixel)
+                
+                // Check if green is dominant (green > red AND green > blue)
+                // Also check if it's not too dark or too bright
+                val brightness = (red + green + blue) / 3
+                if (green > red && green > blue && brightness in 30..225) {
+                    greenDominantPixels++
+                }
+            }
+            
+            smallBitmap.recycle()
+            return greenDominantPixels.toFloat() / pixels.size
         }
     }
 }

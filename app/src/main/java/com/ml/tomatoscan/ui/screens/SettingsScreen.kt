@@ -46,6 +46,7 @@ fun SettingsScreen(
     val userName by userViewModel.userName.collectAsState()
     val themeMode by userViewModel.themeMode.collectAsState()
     val appLanguage by userViewModel.appLanguage.collectAsState()
+    val geminiPreValidationEnabled by userViewModel.geminiPreValidationEnabled.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -123,6 +124,23 @@ fun SettingsScreen(
                                                             else -> stringResource(id = com.ml.tomatoscan.R.string.system_default)
                                                         },
                             onClick = { showLanguageDialog = true }
+                        )
+                    )
+                )
+
+                // AI Features Section
+                SettingsSection(
+                    title = "AI Features",
+                    items = listOf(
+                        SettingsItemWithToggle(
+                            icon = Icons.Default.AutoAwesome,
+                            title = "Gemini Pre-Validation",
+                            subtitle = if (geminiPreValidationEnabled) 
+                                "AI verifies tomato leaf before analysis (requires internet)" 
+                            else 
+                                "Disabled - faster but may analyze non-tomato images",
+                            isChecked = geminiPreValidationEnabled,
+                            onToggle = { userViewModel.updateGeminiPreValidation(it) }
                         )
                     )
                 )
@@ -217,7 +235,7 @@ fun SettingsScreen(
 }
 
 @Composable
-fun SettingsSection(title: String, items: List<SettingsItem>) {
+fun SettingsSection(title: String, items: List<Any>) {
     Column {
         Text(
             text = title,
@@ -234,7 +252,10 @@ fun SettingsSection(title: String, items: List<SettingsItem>) {
         ) {
             Column {
                 items.forEachIndexed { index, item ->
-                    SettingsItemRow(item = item)
+                    when (item) {
+                        is SettingsItem -> SettingsItemRow(item = item)
+                        is SettingsItemWithToggle -> SettingsItemRowWithToggle(item = item)
+                    }
                     if (index < items.size - 1) {
                         Divider(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -445,7 +466,7 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    "TomatoScan collects and stores scan history locally on your device. Images analyzed are processed using Google's Gemini AI API. We do not store your images on our servers.",
+                    "TomatoScan collects and stores scan history locally on your device. Images are analyzed using machine learning technology for disease detection. We do not store your images on external servers.",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
@@ -455,7 +476,7 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    "Images you upload are sent to Google's Gemini AI for disease analysis. Please refer to Google's privacy policy for information on how they handle data.",
+                    "Images you capture are processed locally on your device for tomato disease analysis. Your images remain private and are not shared with third parties.",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
@@ -470,12 +491,12 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                 )
                 
                 Text(
-                    "4. Third-Party Services",
+                    "4. Data Usage",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    "This app uses Google Gemini AI API for disease detection. By using this app, you agree to Google's terms of service and privacy policy.",
+                    "The app uses your scan data solely to provide disease detection and analysis services. No personal information is collected or transmitted.",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
@@ -526,3 +547,63 @@ data class SettingsItem(
     val textColor: Color? = null,
     val hasNavigation: Boolean = true
 )
+
+data class SettingsItemWithToggle(
+    val icon: ImageVector,
+    val title: String,
+    val subtitle: String = "",
+    val isChecked: Boolean,
+    val onToggle: (Boolean) -> Unit
+)
+
+@Composable
+fun SettingsItemRowWithToggle(item: SettingsItemWithToggle) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.title,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (item.subtitle.isNotEmpty()) {
+                Text(
+                    text = item.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Switch(
+            checked = item.isChecked,
+            onCheckedChange = item.onToggle,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            )
+        )
+    }
+}

@@ -71,7 +71,8 @@ class HistoryRepository(private val context: Context) {
                 treatmentOptions = scanResult.treatmentOptions,
                 preventionMeasures = scanResult.preventionMeasures,
                 timestamp = Date(scanResult.timestamp),
-                quality = scanResult.quality
+                quality = scanResult.quality,
+                diagnosticReport = scanResult.diagnosticReport
             )
             
             val id = analysisDao.insertAnalysis(analysisEntity)
@@ -104,7 +105,8 @@ class HistoryRepository(private val context: Context) {
                     description = entity.description,
                     recommendations = entity.recommendations,
                     treatmentOptions = entity.treatmentOptions,
-                    preventionMeasures = entity.preventionMeasures
+                    preventionMeasures = entity.preventionMeasures,
+                    diagnosticReport = entity.diagnosticReport
                 )
             }
         }

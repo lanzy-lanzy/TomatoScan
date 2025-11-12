@@ -15,5 +15,7 @@ data class ScanResult(
     val description: String = "",
     val recommendations: List<String> = emptyList(),
     val treatmentOptions: List<String> = emptyList(),
-    val preventionMeasures: List<String> = emptyList()
+    val preventionMeasures: List<String> = emptyList(),
+    // Formal diagnostic report from pipeline
+    val diagnosticReport: DiagnosticReport? = null
 ) : Parcelable

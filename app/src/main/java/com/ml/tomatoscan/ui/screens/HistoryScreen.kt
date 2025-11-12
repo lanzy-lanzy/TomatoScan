@@ -32,6 +32,7 @@ import coil.compose.AsyncImage
 import coil.ImageLoader
 import coil.request.ImageRequest
 import com.ml.tomatoscan.models.ScanResult
+import com.ml.tomatoscan.ui.components.DiagnosticReportCard
 import com.ml.tomatoscan.utils.DatabaseImageFetcher
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
@@ -336,9 +337,13 @@ fun HistoryItem(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Prioritize diagnostic report disease name if available
+                    val displayName = scanResult.diagnosticReport?.diseaseName?.takeIf { it.isNotBlank() }
+                        ?: if (scanResult.diseaseDetected.isNotEmpty() && scanResult.diseaseDetected != "Unknown") 
+                            scanResult.diseaseDetected else scanResult.quality
+                    
                     Text(
-                        text = if (scanResult.diseaseDetected.isNotEmpty() && scanResult.diseaseDetected != "Unknown") 
-                            scanResult.diseaseDetected else scanResult.quality,
+                        text = displayName,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = diseaseColor,
@@ -368,10 +373,14 @@ fun HistoryItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
-                if (scanResult.description.isNotEmpty()) {
+                // Show diagnostic report summary if available, otherwise show description
+                val summaryText = scanResult.diagnosticReport?.observedSymptoms?.takeIf { it.isNotBlank() }
+                    ?: scanResult.description
+                
+                if (summaryText.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = scanResult.description,
+                        text = summaryText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
@@ -450,6 +459,16 @@ fun ScanResultDetailDialog(
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentScale = ContentScale.Crop
                     )
+                }
+                
+                // Show diagnostic report if available
+                scanResult.diagnosticReport?.let { report ->
+                    item {
+                        DiagnosticReportCard(
+                            diagnosticReport = report,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 
                 item {

@@ -36,7 +36,7 @@
     <string name="settings_section_about">About</string>
     <string name="settings_about_title">About TomatoScan</string>
     <string name="settings_about_app_desc">An AI-powered app to help you identify tomato leaf diseases and get treatment advice.</string>
-    <string name="settings_about_powered_by">Powered by Google Gemini AI</string>
+    <string name="settings_about_powered_by">Powered by Advanced Machine Learning</string>
 
     <!-- Theme Dialog -->
     <string name="dialog_theme_title">Choose Theme</string>

@@ -20,6 +20,7 @@ class UserViewModel(application: Application) : ViewModel() {
     private val KEY_USER_PICTURE = "user_profile_picture_uri"
     private val KEY_THEME_MODE = "theme_mode" // system | light | dark
     private val KEY_APP_LANGUAGE = "app_language" // system | en | it
+    private val KEY_GEMINI_PRE_VALIDATION = "gemini_pre_validation" // true | false
 
     // User name
     private val _userName = MutableStateFlow("Alex") // Default name
@@ -37,11 +38,16 @@ class UserViewModel(application: Application) : ViewModel() {
     private val _appLanguage = MutableStateFlow("system")
     val appLanguage: StateFlow<String> = _appLanguage
 
+    // Gemini pre-validation
+    private val _geminiPreValidationEnabled = MutableStateFlow(true) // Default enabled
+    val geminiPreValidationEnabled: StateFlow<Boolean> = _geminiPreValidationEnabled
+
     init {
         loadUserName()
         loadUserProfilePictureUri()
         loadThemeMode()
         loadAppLanguage()
+        loadGeminiPreValidation()
     }
 
     private fun loadUserName() {
@@ -58,6 +64,10 @@ class UserViewModel(application: Application) : ViewModel() {
 
     private fun loadAppLanguage() {
         _appLanguage.value = sharedPreferences.getString(KEY_APP_LANGUAGE, "system") ?: "system"
+    }
+
+    private fun loadGeminiPreValidation() {
+        _geminiPreValidationEnabled.value = sharedPreferences.getBoolean(KEY_GEMINI_PRE_VALIDATION, true)
     }
 
     fun updateUserProfilePictureUri(uri: Uri?) {
@@ -109,6 +119,16 @@ class UserViewModel(application: Application) : ViewModel() {
         }
     }
 
+    fun updateGeminiPreValidation(enabled: Boolean) {
+        viewModelScope.launch {
+            _geminiPreValidationEnabled.value = enabled
+            with(sharedPreferences.edit()) {
+                putBoolean(KEY_GEMINI_PRE_VALIDATION, enabled)
+                apply()
+            }
+        }
+    }
+
     fun clearAllPreferences() {
         viewModelScope.launch {
             with(sharedPreferences.edit()) {
@@ -120,6 +140,7 @@ class UserViewModel(application: Application) : ViewModel() {
             _userProfilePictureUri.value = null
             _themeMode.value = "system"
             _appLanguage.value = "system"
+            _geminiPreValidationEnabled.value = true
         }
     }
 }

@@ -126,13 +126,13 @@ fun DashboardScreen(
                     }
                 } else {
                     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        StatsSection(scanHistory = scanHistory)
+                        Spacer(modifier = Modifier.height(24.dp))
                         DiseaseInformationSection()
                         Spacer(modifier = Modifier.height(24.dp))
                         RecentScansSection(navController = navController, scanHistory = scanHistory, imageLoader = viewModel.imageLoader)
                         Spacer(modifier = Modifier.height(24.dp))
-                        StatsSection(scanHistory = scanHistory)
-                        Spacer(modifier = Modifier.height(24.dp))
-                        ScanHistoryChart(scanHistory = scanHistory)
+                        DiseaseDetectionInsights(scanHistory = scanHistory)
                         Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
@@ -779,23 +779,26 @@ fun DiseaseCard(
 }
 
 @Composable
-fun ScanHistoryChart(scanHistory: List<ScanResult>) {
-    val qualityCounts = scanHistory.groupingBy { it.quality }.eachCount()
-    val chartData = qualityCounts.map { (quality, count) ->
-        PieEntry(count.toFloat(), quality)
+fun DiseaseDetectionInsights(scanHistory: List<ScanResult>) {
+    // Calculate disease detection statistics
+    val diseaseCounts = scanHistory.groupingBy { it.diseaseDetected }.eachCount()
+    val totalScans = scanHistory.size
+    val healthyCount = diseaseCounts["Healthy"] ?: 0
+    val diseaseCount = totalScans - healthyCount
+    val healthyPercentage = if (totalScans > 0) (healthyCount.toFloat() / totalScans * 100).toInt() else 0
+    
+    // Get most common disease
+    val mostCommonDisease = diseaseCounts.filter { it.key != "Healthy" }.maxByOrNull { it.value }
+    
+    // Get recent trend (last 5 scans)
+    val recentScans = scanHistory.takeLast(5)
+    val recentHealthyCount = recentScans.count { it.diseaseDetected == "Healthy" }
+    val trendText = when {
+        recentScans.isEmpty() -> "No recent data"
+        recentHealthyCount >= 4 -> "Excellent health trend"
+        recentHealthyCount >= 2 -> "Moderate health trend"
+        else -> "Needs attention"
     }
-
-    // Use theme colors for the chart
-    val chartColors = listOf(
-        MaterialTheme.colorScheme.primary,
-        MaterialTheme.colorScheme.secondary,
-        MaterialTheme.colorScheme.tertiary,
-        MaterialTheme.colorScheme.error,
-        MaterialTheme.colorScheme.outline,
-        MaterialTheme.colorScheme.inversePrimary
-    ).map { it.toArgb() }
-
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -807,81 +810,230 @@ fun ScanHistoryChart(scanHistory: List<ScanResult>) {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "Scan Results Distribution",
+                text = "Disease Detection Insights",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-            if (chartData.isNotEmpty()) {
-                AndroidView(
-                    factory = { context ->
-                        PieChart(context).apply {
-                            setUsePercentValues(true)
-                            description.isEnabled = false
-                            isDrawHoleEnabled = true
-                            setHoleColor(Color.Transparent.toArgb())
-                            setHoleRadius(58f)
-                            setTransparentCircleRadius(61f)
-
-                            legend.apply {
-                                isEnabled = true
-                                verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
-                                horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
-                                orientation = Legend.LegendOrientation.HORIZONTAL
-                                setDrawInside(false)
-                                textColor = onSurfaceColor
-                                textSize = 12f
-                                xEntrySpace = 10f
-                                yEntrySpace = 5f
-                                isWordWrapEnabled = true
-                            }
-
-                            setEntryLabelColor(onSurfaceColor)
-                            setEntryLabelTypeface(Typeface.DEFAULT_BOLD)
-                            setEntryLabelTextSize(12f)
+            
+            if (totalScans > 0) {
+                // Health Status Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Overall Health Status",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "$healthyCount of $totalScans scans healthy",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
-                    update = { chart ->
-                        val dataSet = PieDataSet(chartData, "Scan Results")
-                        dataSet.sliceSpace = 3f
-                        dataSet.colors = chartColors
-                        dataSet.valueLinePart1OffsetPercentage = 80f
-                        dataSet.valueLinePart1Length = 0.5f
-                        dataSet.valueLinePart2Length = 0.6f
-                        dataSet.yValuePosition = PieDataSet.ValuePosition.OUTSIDE_SLICE
-
-                        val data = PieData(dataSet)
-                        data.setValueFormatter(PercentFormatter(chart))
-                        data.setValueTextSize(11f)
-                        data.setValueTextColor(onSurfaceColor)
-                        data.setValueTypeface(Typeface.DEFAULT)
-
-                        chart.data = data
-                        chart.animateY(1400)
+                        
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(
+                                    color = when {
+                                        healthyPercentage >= 70 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                        healthyPercentage >= 40 -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+                                        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                                    },
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "$healthyPercentage%",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = when {
+                                    healthyPercentage >= 70 -> MaterialTheme.colorScheme.primary
+                                    healthyPercentage >= 40 -> MaterialTheme.colorScheme.secondary
+                                    else -> MaterialTheme.colorScheme.error
+                                }
+                            )
+                        }
                     }
-                )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Most Common Disease
+                if (mostCommonDisease != null && mostCommonDisease.value > 0) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Most Detected Disease",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "${mostCommonDisease.key} (${mostCommonDisease.value} cases)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                
+                // Recent Trend
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.TrendingUp,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Recent Trend",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = trendText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Disease Breakdown
+                if (diseaseCounts.size > 1) {
+                    Text(
+                        text = "Detection Breakdown",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    
+                    diseaseCounts.entries.sortedByDescending { it.value }.forEach { entry ->
+                        val disease = entry.key
+                        val count = entry.value
+                        val percentage = (count.toFloat() / totalScans * 100).toInt()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            color = if (disease == "Healthy") 
+                                                MaterialTheme.colorScheme.primary 
+                                            else 
+                                                MaterialTheme.colorScheme.error,
+                                            shape = CircleShape
+                                        )
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = disease,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Text(
+                                text = "$count ($percentage%)",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
             } else {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp),
+                        .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with a more suitable icon
+                            imageVector = Icons.Default.Analytics,
                             contentDescription = "No data",
                             modifier = Modifier.size(64.dp),
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "No scan history available.",
+                            "No scan data available yet.",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Start scanning to see insights!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                     }
                 }

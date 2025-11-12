@@ -1,0 +1,55 @@
+YOLOv11 Model Placeholder
+=========================
+
+This file serves as a placeholder for the YOLOv11 tomato leaf detection model.
+
+REQUIRED FILE: yolov11_tomato_leaf.tflite
+
+The actual YOLOv11 model file needs to be placed in this directory with the exact name:
+    yolov11_tomato_leaf.tflite
+
+Model Specifications:
+- Input size: 640x640x3 (RGB image)
+- Output: Bounding boxes with class probabilities for tomato leaf detection
+- Format: TensorFlow Lite (.tflite)
+
+How to Obtain the Model:
+------------------------
+
+Option 1: Train Your Own Model
+1. Collect and annotate tomato leaf images
+2. Train YOLOv11 using Ultralytics framework
+3. Export to TFLite format:
+   ```python
+   from ultralytics import YOLO
+   model = YOLO('path/to/trained/model.pt')
+   model.export(format='tflite', imgsz=640)
+   ```
+
+Option 2: Use Pre-trained Model
+1. Download a pre-trained YOLOv11 model for plant/leaf detection
+2. Fine-tune on tomato leaf dataset if needed
+3. Export to TFLite format
+
+Option 3: Development/Testing
+For development without the actual model, you can:
+- Use a generic YOLOv11 model trained on COCO dataset
+- Download from: https://github.com/ultralytics/assets/releases
+- Note: This will have lower accuracy for tomato-specific detection
+
+Once you have the model file:
+1. Rename it to: yolov11_tomato_leaf.tflite
+2. Place it in this directory (app/src/main/assets/models/)
+3. Delete this placeholder file
+4. Rebuild the app
+
+The app will automatically load the model from the path configured in:
+    app/src/main/java/com/ml/tomatoscan/config/ModelConfig.kt
+
+Model Configuration:
+- Path: models/yolov11_tomato_leaf.tflite
+- Input size: 640x640 (configured in ModelConfig.YOLO_INPUT_SIZE)
+- Confidence threshold: 0.3 (configured in ModelConfig.DETECTION_CONFIDENCE_THRESHOLD)
+- NMS IoU threshold: 0.45 (configured in ModelConfig.NMS_IOU_THRESHOLD)
+
+For more details, see: app/src/main/assets/models/README.md

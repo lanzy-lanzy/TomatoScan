@@ -36,7 +36,7 @@
     <string name="settings_section_about">Tungkol</string>
     <string name="settings_about_title">Tungkol sa TomatoScan</string>
     <string name="settings_about_app_desc">Isang AI-powered na app upang makatulong tukuyin ang mga sakit sa dahon ng kamatis at magbigay ng payo sa paggamot.</string>
-    <string name="settings_about_powered_by">Pinapagana ng Google Gemini AI</string>
+    <string name="settings_about_powered_by">Pinapagana ng Advanced Machine Learning</string>
 
     <!-- Theme Dialog -->
     <string name="dialog_theme_title">Pumili ng Tema</string>

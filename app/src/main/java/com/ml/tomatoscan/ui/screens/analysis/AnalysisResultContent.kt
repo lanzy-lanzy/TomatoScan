@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ml.tomatoscan.models.ScanResult
+import com.ml.tomatoscan.ui.components.DiagnosticReportCard
 import com.ml.tomatoscan.viewmodels.TomatoScanViewModel
 
 @Composable
@@ -103,6 +104,15 @@ fun ScanResultDetails(scanResult: ScanResult?) {
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Display formal diagnostic report if available
+        scanResult?.diagnosticReport?.let { report ->
+            DiagnosticReportCard(
+                diagnosticReport = report,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+        
         // --- Enhanced Disease Header ---
         Text(
             text = scanResult?.diseaseDetected?.takeIf { it.isNotBlank() } ?: "Healthy",
