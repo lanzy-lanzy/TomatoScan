@@ -9,9 +9,11 @@ import com.ml.tomatoscan.BuildConfig
 object ModelConfig {
     /**
      * Path to YOLOv11 leaf detection model in assets
-     * Using the new 640x640 trained model (30 epochs, INT8 quantized)
+     * Using the new 640x640 trained model (30 epochs, FLOAT32 for maximum accuracy)
+     * Model: YOLO11n with 2.58M parameters, 6.3 GFLOPs
+     * Training: 30 epochs, mAP50-95: 0.995 (99.5% accuracy)
      */
-    const val YOLO_MODEL_PATH = "best_int8.tflite"
+    const val YOLO_MODEL_PATH = "best_float32.tflite"
 
     /**
      * Path to TFLite disease classification model in assets
@@ -77,9 +79,13 @@ object ModelConfig {
     /**
      * Model version and training metadata
      */
-    const val MODEL_VERSION = "v2.0-30epochs"
+    const val MODEL_VERSION = "v3.0-float32-30epochs"
     const val MODEL_TRAINING_EPOCHS = 30
-    const val MODEL_TRAINING_DATE = "2024-11-13"
+    const val MODEL_TRAINING_DATE = "2024-11-14"
+    const val MODEL_ARCHITECTURE = "YOLO11n"
+    const val MODEL_PARAMETERS = "2.58M"
+    const val MODEL_GFLOPS = 6.3f
+    const val MODEL_MAP50_95 = 0.995f // 99.5% accuracy
 
     /**
      * Validates that required model files exist in assets
