@@ -195,13 +195,39 @@ class AnalysisPipelineImpl(
             val classificationTime = System.currentTimeMillis() - classificationStartTime
             Log.d(TAG, "Disease classified in ${classificationTime}ms: ${classificationResult.diseaseClass.displayName}, confidence: ${classificationResult.confidence}")
             
+            // Stage 2.5: Enhanced Gemini validation for classification (if enabled and available)
+            var finalClassificationResult = classificationResult
+            if (geminiPreValidationEnabled && geminiApi.isAvailable()) {
+                Log.d(TAG, "Stage 2.5: Gemini validation - verifying YOLO classification...")
+                val validationStartTime = System.currentTimeMillis()
+                
+                val (isCorrect, correctedClass, reason) = geminiApi.validateClassification(
+                    croppedLeaf, 
+                    classificationResult
+                )
+                val validationTime = System.currentTimeMillis() - validationStartTime
+                
+                Log.d(TAG, "Gemini classification validation completed in ${validationTime}ms: $reason")
+                
+                if (!isCorrect && correctedClass != null) {
+                    Log.d(TAG, "Gemini corrected classification from ${classificationResult.diseaseClass.displayName} to ${correctedClass.displayName}")
+                    finalClassificationResult = com.ml.tomatoscan.ml.ClassificationResult(
+                        diseaseClass = correctedClass,
+                        confidence = 0.85f, // High confidence from Gemini
+                        allProbabilities = mapOf(correctedClass to 0.85f)
+                    )
+                }
+            } else {
+                Log.d(TAG, "Gemini classification validation skipped (disabled or unavailable)")
+            }
+            
             // Check if confidence is too low
-            if (classificationResult.confidence < CONFIDENCE_THRESHOLD) {
-                val error = AnalysisError.LowConfidence(classificationResult.confidence)
+            if (finalClassificationResult.confidence < CONFIDENCE_THRESHOLD) {
+                val error = AnalysisError.LowConfidence(finalClassificationResult.confidence)
                 AnalysisErrorHandler.logError(error, mapOf(
                     "stage" to "classification",
-                    "diseaseClass" to classificationResult.diseaseClass.displayName,
-                    "confidence" to classificationResult.confidence,
+                    "diseaseClass" to finalClassificationResult.diseaseClass.displayName,
+                    "confidence" to finalClassificationResult.confidence,
                     "threshold" to CONFIDENCE_THRESHOLD,
                     "classificationTime" to classificationTime
                 ))
@@ -210,7 +236,7 @@ class AnalysisPipelineImpl(
                     error = error,
                     processingTimeMs = processingTime,
                     detectionResult = detectionResult,
-                    classificationResult = classificationResult
+                    classificationResult = finalClassificationResult
                 )
             }
             
@@ -220,17 +246,17 @@ class AnalysisPipelineImpl(
             
             val diagnosticReport = if (geminiApi.isAvailable()) {
                 try {
-                    geminiApi.generateDiagnosticReport(croppedLeaf, classificationResult)
+                    geminiApi.generateDiagnosticReport(croppedLeaf, finalClassificationResult)
                 } catch (e: Exception) {
                     val error = AnalysisError.GeminiUnavailable(e.message ?: "Unknown error")
                     AnalysisErrorHandler.logError(error, mapOf(
                         "stage" to "report_generation",
                         "exception" to e::class.simpleName.toString(),
-                        "diseaseClass" to classificationResult.diseaseClass.displayName
+                        "diseaseClass" to finalClassificationResult.diseaseClass.displayName
                     ))
                     Log.e(TAG, "Gemini API failed, using fallback", e)
                     // Fallback to basic report if Gemini fails
-                    createFallbackReport(classificationResult)
+                    createFallbackReport(finalClassificationResult)
                 }
             } else {
                 val error = AnalysisError.GeminiUnavailable("Service unavailable")
@@ -239,7 +265,7 @@ class AnalysisPipelineImpl(
                     "reason" to "Gemini API not available"
                 ))
                 Log.w(TAG, "Gemini API unavailable, using fallback report")
-                createFallbackReport(classificationResult)
+                createFallbackReport(finalClassificationResult)
             }
             
             val reportTime = System.currentTimeMillis() - reportStartTime
@@ -262,13 +288,13 @@ class AnalysisPipelineImpl(
                 return@withContext AnalysisResult.failure(
                     error = error,
                     processingTimeMs = totalProcessingTime,
-                    classificationResult = classificationResult
+                    classificationResult = finalClassificationResult
                 )
             }
             
             AnalysisResult.success(
                 detectionResult = detectionResult,
-                classificationResult = classificationResult,
+                classificationResult = finalClassificationResult,
                 diagnosticReport = diagnosticReport,
                 processingTimeMs = totalProcessingTime
             )
@@ -438,40 +464,41 @@ class AnalysisPipelineImpl(
         }
         
         // Map class index to DiseaseClass
-        // PlantVillage dataset standard order (alphabetical by folder name):
-        // Tomato___Bacterial_spot (0)
-        // Tomato___Early_blight (1)
-        // Tomato___healthy (2)
-        // Tomato___Late_blight (3)
-        // Tomato___Leaf_Mold (4)
-        // Tomato___Septoria_leaf_spot (5)
-        
-        // CORRECTED mapping based on testing:
-        // Your model has Healthy at index 5 (last), not index 2
-        // This matches your training data organization
+        // YOLOv11 model (best_int8.tflite) trained on 6 disease classes
+        // Order matches the training data from PlantVillage dataset:
+        // 0: Tomato_Bacterial_spot
+        // 1: Tomato_Early_blight
+        // 2: Tomato_Late_blight
+        // 3: Tomato_Septoria_leaf_spot
+        // 4: Tomato_Tomato_mosaic_virus
+        // 5: Tomato_healthy
         val diseaseClasses = listOf(
-            com.ml.tomatoscan.models.DiseaseClass.BACTERIAL_SPECK,     // Index 0
-            com.ml.tomatoscan.models.DiseaseClass.EARLY_BLIGHT,        // Index 1
-            com.ml.tomatoscan.models.DiseaseClass.LATE_BLIGHT,         // Index 2
-            com.ml.tomatoscan.models.DiseaseClass.LEAF_MOLD,           // Index 3
-            com.ml.tomatoscan.models.DiseaseClass.SEPTORIA_LEAF_SPOT,  // Index 4
-            com.ml.tomatoscan.models.DiseaseClass.HEALTHY              // Index 5
+            com.ml.tomatoscan.models.DiseaseClass.BACTERIAL_SPOT,       // Index 0
+            com.ml.tomatoscan.models.DiseaseClass.EARLY_BLIGHT,         // Index 1
+            com.ml.tomatoscan.models.DiseaseClass.LATE_BLIGHT,          // Index 2
+            com.ml.tomatoscan.models.DiseaseClass.SEPTORIA_LEAF_SPOT,   // Index 3
+            com.ml.tomatoscan.models.DiseaseClass.TOMATO_MOSAIC_VIRUS,  // Index 4
+            com.ml.tomatoscan.models.DiseaseClass.HEALTHY               // Index 5
         )
         
-        // Log all probabilities for debugging (MUST match diseaseClasses order!)
+        // Log all probabilities for debugging with class names
         Log.d(TAG, "=== YOLO Class Probabilities ===")
-        val classNames = listOf("Bacterial_Speck", "Early_Blight", "Late_Blight", "Leaf_Mold", "Septoria", "Healthy")
         for ((idx, prob) in classProbabilities.entries.sortedBy { it.key }) {
-            val name = if (idx < classNames.size) classNames[idx] else "Unknown"
-            Log.d(TAG, "  Index $idx ($name): ${String.format("%.4f", prob)} (${(prob * 100).toInt()}%)")
+            val className = if (idx < diseaseClasses.size) {
+                diseaseClasses[idx].displayName
+            } else {
+                "Unknown"
+            }
+            Log.d(TAG, "  Index $idx ($className): ${String.format("%.4f", prob)} (${(prob * 100).toInt()}%)")
         }
-        Log.d(TAG, "  Winner: Index $maxClassIdx (${if (maxClassIdx < classNames.size) classNames[maxClassIdx] else "Unknown"}) = ${String.format("%.4f", maxProb)} (${(maxProb * 100).toInt()}%)")
         
         val diseaseClass = if (maxClassIdx < diseaseClasses.size) {
             diseaseClasses[maxClassIdx]
         } else {
             com.ml.tomatoscan.models.DiseaseClass.UNCERTAIN
         }
+        
+        Log.d(TAG, "  Winner: Index $maxClassIdx (${diseaseClass.displayName}) = ${String.format("%.4f", maxProb)} (${(maxProb * 100).toInt()}%)")
         
         // Convert to map with DiseaseClass keys
         val allProbabilities = mutableMapOf<com.ml.tomatoscan.models.DiseaseClass, Float>()

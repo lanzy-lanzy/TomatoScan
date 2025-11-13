@@ -30,11 +30,11 @@ class TFLiteDiseaseClassifier(private val context: Context) : DiseaseClassifier 
          * This order must match the training labels of the TFLite model.
          */
         private val SUPPORTED_CLASSES = listOf(
-            DiseaseClass.BACTERIAL_SPECK,
+            DiseaseClass.BACTERIAL_SPOT,
             DiseaseClass.EARLY_BLIGHT,
             DiseaseClass.HEALTHY,
             DiseaseClass.LATE_BLIGHT,
-            DiseaseClass.LEAF_MOLD,
+            DiseaseClass.TOMATO_MOSAIC_VIRUS,
             DiseaseClass.SEPTORIA_LEAF_SPOT
         )
     }

@@ -9,9 +9,9 @@ import com.ml.tomatoscan.BuildConfig
 object ModelConfig {
     /**
      * Path to YOLOv11 leaf detection model in assets
-     * Using the new 640x640 trained model
+     * Using the new 640x640 trained model (30 epochs, INT8 quantized)
      */
-    const val YOLO_MODEL_PATH = "tomato_leaf_640.tflite"
+    const val YOLO_MODEL_PATH = "best_int8.tflite"
 
     /**
      * Path to TFLite disease classification model in assets
@@ -59,25 +59,27 @@ object ModelConfig {
      */
     const val CROP_PADDING_PERCENT = 0.1f
 
-    /**
-     * Model versions from BuildConfig for tracking and debugging
-     */
-    val MODEL_VERSION: String = BuildConfig.MODEL_VERSION
-    val YOLO_MODEL_VERSION: String = BuildConfig.YOLO_MODEL_VERSION
-    val TFLITE_MODEL_VERSION: String = BuildConfig.TFLITE_MODEL_VERSION
+
 
     /**
-     * Supported disease classes in order
+     * Supported disease classes in order matching the training data
+     * Order must match model output indices (0-5)
      */
     val DISEASE_CLASSES = listOf(
-        "Early Blight",
-        "Late Blight",
-        "Leaf Mold",
-        "Septoria Leaf Spot",
-        "Bacterial Speck",
-        "Healthy",
-        "Uncertain"
+        "Bacterial Spot",        // Index 0
+        "Early Blight",          // Index 1
+        "Late Blight",           // Index 2
+        "Septoria Leaf Spot",    // Index 3
+        "Tomato Mosaic Virus",   // Index 4
+        "Healthy"                // Index 5
     )
+    
+    /**
+     * Model version and training metadata
+     */
+    const val MODEL_VERSION = "v2.0-30epochs"
+    const val MODEL_TRAINING_EPOCHS = 30
+    const val MODEL_TRAINING_DATE = "2024-11-13"
 
     /**
      * Validates that required model files exist in assets

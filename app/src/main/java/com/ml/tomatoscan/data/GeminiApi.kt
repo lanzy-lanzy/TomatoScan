@@ -543,6 +543,87 @@ class GeminiApi(private val context: Context) {
     }
     
     /**
+     * Validates YOLO classification result and corrects if needed.
+     * Gemini reviews the image and YOLO's prediction to catch obvious errors.
+     * 
+     * @param bitmap The cropped leaf image
+     * @param yoloResult The YOLO classification result
+     * @return Triple<Boolean, DiseaseClass?, String> - (isCorrect, correctedClass, reason)
+     */
+    suspend fun validateClassification(
+        bitmap: Bitmap,
+        yoloResult: ClassificationResult
+    ): Triple<Boolean, com.ml.tomatoscan.models.DiseaseClass?, String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val model = generativeModel
+                if (model == null) {
+                    Log.w("GeminiApi", "Gemini model not available for classification validation")
+                    return@withContext Triple(true, null, "Gemini unavailable - accepting YOLO result")
+                }
+                
+                val smallBitmap = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
+                
+                val prompt = """
+                    You are an expert plant pathologist. Review this tomato leaf image.
+                    
+                    The AI model classified this as: ${yoloResult.diseaseClass.displayName}
+                    Confidence: ${String.format("%.1f%%", yoloResult.confidence * 100)}
+                    
+                    Is this classification correct? Respond in this EXACT format:
+                    
+                    CORRECT: YES or NO
+                    ACTUAL_CLASS: [One of: Healthy, Early Blight, Late Blight, Tomato Mosaic Virus, Septoria Leaf Spot, Bacterial Spot]
+                    REASON: [Brief explanation]
+                    
+                    Be especially careful to distinguish:
+                    - Healthy leaves (uniform green, no spots/lesions)
+                    - Diseased leaves (spots, lesions, discoloration, wilting)
+                """.trimIndent()
+                
+                val inputContent = content {
+                    image(smallBitmap)
+                    text(prompt)
+                }
+                
+                Log.d("GeminiApi", "Sending classification validation request to Gemini...")
+                val response = model.generateContent(inputContent)
+                val responseText = response.text?.trim() ?: ""
+                
+                Log.d("GeminiApi", "Gemini classification validation response: $responseText")
+                
+                // Parse response
+                val isCorrect = responseText.contains("CORRECT: YES", ignoreCase = true)
+                val actualClassLine = responseText.lines().find { it.startsWith("ACTUAL_CLASS:", ignoreCase = true) }
+                val reasonLine = responseText.lines().find { it.startsWith("REASON:", ignoreCase = true) }
+                
+                val correctedClass = if (!isCorrect && actualClassLine != null) {
+                    val className = actualClassLine.substringAfter(":").trim()
+                    when {
+                        className.contains("Healthy", ignoreCase = true) -> com.ml.tomatoscan.models.DiseaseClass.HEALTHY
+                        className.contains("Early Blight", ignoreCase = true) -> com.ml.tomatoscan.models.DiseaseClass.EARLY_BLIGHT
+                        className.contains("Late Blight", ignoreCase = true) -> com.ml.tomatoscan.models.DiseaseClass.LATE_BLIGHT
+                        className.contains("Mosaic", ignoreCase = true) -> com.ml.tomatoscan.models.DiseaseClass.TOMATO_MOSAIC_VIRUS
+                        className.contains("Septoria", ignoreCase = true) -> com.ml.tomatoscan.models.DiseaseClass.SEPTORIA_LEAF_SPOT
+                        className.contains("Bacterial", ignoreCase = true) -> com.ml.tomatoscan.models.DiseaseClass.BACTERIAL_SPOT
+                        else -> null
+                    }
+                } else null
+                
+                val reason = reasonLine?.substringAfter(":")?.trim() ?: "Gemini validation completed"
+                
+                smallBitmap.recycle()
+                Triple(isCorrect, correctedClass, reason)
+                
+            } catch (e: Exception) {
+                Log.e("GeminiApi", "Error in Gemini classification validation", e)
+                // On error, accept YOLO result (fail-open)
+                Triple(true, null, "Validation error: ${e.message}")
+            }
+        }
+    }
+    
+    /**
      * Pre-validates if the image contains a tomato leaf before running YOLO detection.
      * This is a fast check using Gemini's vision capabilities to reject non-tomato images.
      * 

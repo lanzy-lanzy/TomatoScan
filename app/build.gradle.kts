@@ -50,7 +50,12 @@ android {
         buildConfigField(
             "String",
             "MODEL_VERSION",
-            "\"1.0.0\""
+            "\"v2.0-30epochs\""
+        )
+        buildConfigField(
+            "int",
+            "MODEL_TRAINING_EPOCHS",
+            "30"
         )
         buildConfigField(
             "String",
@@ -147,6 +152,7 @@ dependencies {
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     testImplementation(libs.junit)
+    testImplementation("org.robolectric:robolectric:4.11.1")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
