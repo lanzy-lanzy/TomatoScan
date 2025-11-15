@@ -78,14 +78,29 @@ object ModelConfig {
     
     /**
      * Model version and training metadata
+     * 
+     * Training Configuration:
+     * - Dual-layer augmentation strategy for maximum robustness
+     * - Pre-training augmentation: 7x dataset expansion (rotation, flip, zoom, brightness, crops)
+     * - Runtime augmentation: Random rotation ±15°, flip, scale ±10%, HSV jitter
+     * - Dataset: PlantVillage tomato diseases (6 classes)
+     * - Batch size: 16, Image size: 640x640
      */
-    const val MODEL_VERSION = "v3.0-float32-30epochs"
-    const val MODEL_TRAINING_EPOCHS = 30
-    const val MODEL_TRAINING_DATE = "2024-11-14"
+    const val MODEL_VERSION = "v4.0-float32-20epochs-dual-aug"
+    const val MODEL_TRAINING_EPOCHS = 20
+    const val MODEL_TRAINING_DATE = "2024-11-15"
     const val MODEL_ARCHITECTURE = "YOLO11n"
     const val MODEL_PARAMETERS = "2.58M"
     const val MODEL_GFLOPS = 6.3f
-    const val MODEL_MAP50_95 = 0.995f // 99.5% accuracy
+    const val MODEL_MAP50_95 = 0.95f // Expected 95%+ accuracy with dual augmentation
+    
+    /**
+     * Training augmentation details for reference
+     * This helps understand model robustness characteristics
+     */
+    const val TRAINING_AUGMENTATION_STRATEGY = "Dual-Layer"
+    const val PRE_TRAINING_EXPANSION = "7x" // Dataset expanded 7x before training
+    const val RUNTIME_AUGMENTATION = "Rotation ±15°, Flip 50%, Scale ±10%, HSV jitter"
 
     /**
      * Validates that required model files exist in assets

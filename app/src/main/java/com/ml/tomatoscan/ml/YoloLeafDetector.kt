@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.RectF
 import android.util.Log
 import com.ml.tomatoscan.config.ModelConfig
+import com.ml.tomatoscan.utils.ModelPerformanceMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.tensorflow.lite.Interpreter
@@ -96,6 +97,9 @@ class YoloLeafDetector(private val context: Context) : LeafDetector {
             val inferenceTime = System.currentTimeMillis() - startTime
             Log.d(TAG, "YOLOv11 inference completed in ${inferenceTime}ms")
             
+            // Record performance metrics
+            ModelPerformanceMonitor.recordDetectionTime(inferenceTime)
+            
             // Parse detections (transpose the output)
             val detections = parseDetectionsTransposed(outputBuffer[0], bitmap)
             
@@ -103,6 +107,12 @@ class YoloLeafDetector(private val context: Context) : LeafDetector {
             val filteredDetections = applyNMS(detections)
             
             Log.d(TAG, "Detected ${filteredDetections.size} leaves after NMS")
+            
+            // Record confidence if we have detections
+            filteredDetections.firstOrNull()?.let { detection ->
+                ModelPerformanceMonitor.recordConfidence(detection.confidence)
+            }
+            
             filteredDetections
             
         } catch (e: Exception) {

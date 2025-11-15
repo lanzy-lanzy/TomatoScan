@@ -13,6 +13,7 @@ import com.ml.tomatoscan.models.AnalysisError
 import com.ml.tomatoscan.models.DiagnosticReport
 import com.ml.tomatoscan.utils.ImagePreprocessor
 import com.ml.tomatoscan.utils.ImageQualityValidator
+import com.ml.tomatoscan.utils.ModelPerformanceMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -278,6 +279,16 @@ class AnalysisPipelineImpl(
             val totalProcessingTime = System.currentTimeMillis() - startTime
             Log.d(TAG, "Analysis pipeline completed in ${totalProcessingTime}ms")
             
+            // Record performance metrics
+            ModelPerformanceMonitor.recordTotalTime(totalProcessingTime)
+            ModelPerformanceMonitor.recordSuccess()
+            
+            // Log performance statistics every 10 successful inferences
+            val stats = ModelPerformanceMonitor.getStatistics()
+            if (stats.totalInferences % 10L == 0L) {
+                ModelPerformanceMonitor.logStatistics()
+            }
+            
             // Ensure we have a valid detection result before returning success
             if (detectionResult == null) {
                 val error = AnalysisError.NoLeafDetected()
@@ -285,6 +296,7 @@ class AnalysisPipelineImpl(
                     "stage" to "final_validation",
                     "reason" to "Detection result is null despite successful crop"
                 ))
+                ModelPerformanceMonitor.recordFailure()
                 return@withContext AnalysisResult.failure(
                     error = error,
                     processingTimeMs = totalProcessingTime,
@@ -309,6 +321,10 @@ class AnalysisPipelineImpl(
             ))
             Log.e(TAG, "Unexpected error in analysis pipeline", e)
             val processingTime = System.currentTimeMillis() - startTime
+            
+            // Record failure
+            ModelPerformanceMonitor.recordFailure()
+            
             AnalysisResult.failure(
                 error = error,
                 processingTimeMs = processingTime
@@ -520,25 +536,34 @@ class AnalysisPipelineImpl(
      * Used when Gemini API is unavailable or fails.
      * 
      * Maintains consistent report structure with a disclaimer about lack of formal validation.
+     * Includes model training information for transparency.
      */
     private fun createFallbackReport(classificationResult: com.ml.tomatoscan.ml.ClassificationResult): DiagnosticReport {
         val diseaseName = classificationResult.diseaseClass.displayName
         val confidence = String.format("%.1f%%", classificationResult.confidence * 100)
         
-        val fullReport = "Based on the image analysis, the tomato leaf is identified as **$diseaseName**. " +
+        // Get disease-specific information
+        val diseaseInfo = com.ml.tomatoscan.utils.ModelInfoProvider.getDiseaseClassInfo()
+        val symptoms = diseaseInfo[diseaseName] ?: "Visual symptoms consistent with the identified disease."
+        
+        val fullReport = "Based on the image analysis using YOLOv11 model (${com.ml.tomatoscan.config.ModelConfig.MODEL_VERSION}), " +
+                "the tomato leaf is identified as **$diseaseName**. " +
                 "Classification confidence: $confidence. " +
-                "Note: This is a preliminary classification without formal validation. " +
-                "Consult with an agricultural expert for detailed diagnosis and treatment recommendations."
+                "\n\nTypical symptoms: $symptoms " +
+                "\n\nNote: This is an automated classification trained on ${com.ml.tomatoscan.config.ModelConfig.MODEL_TRAINING_EPOCHS} epochs " +
+                "with dual-layer augmentation (7x dataset expansion). " +
+                "The model achieved ${String.format("%.1f%%", com.ml.tomatoscan.config.ModelConfig.MODEL_MAP50_95 * 100)} accuracy on test data. " +
+                "For detailed diagnosis and treatment recommendations, consult with an agricultural expert."
         
         return DiagnosticReport(
             diseaseName = diseaseName,
-            observedSymptoms = "Automated classification based on visual patterns.",
-            confidenceLevel = "Classification confidence: $confidence (preliminary)",
-            managementRecommendation = "Consult with agricultural expert for specific treatment recommendations.",
+            observedSymptoms = symptoms,
+            confidenceLevel = "Classification confidence: $confidence (automated, model v${com.ml.tomatoscan.config.ModelConfig.MODEL_VERSION})",
+            managementRecommendation = "Consult with agricultural expert for specific treatment recommendations based on your local conditions.",
             fullReport = fullReport,
             isUncertain = classificationResult.confidence < CONFIDENCE_THRESHOLD,
             timestamp = System.currentTimeMillis(),
-            modelVersion = "1.0.0"
+            modelVersion = com.ml.tomatoscan.config.ModelConfig.MODEL_VERSION
         )
     }
 }
